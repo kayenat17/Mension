@@ -1,0 +1,9 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- The Mension 'i' Logo (Indigo Star + Yellow Crescent) -->
+  
+  <!-- Indigo Star -->
+  <path d="M 50 5 C 50 15, 60 25, 75 25 C 60 25, 50 35, 50 45 C 50 35, 40 25, 25 25 C 40 25, 50 15, 50 5 Z" fill="#5e5ce6"/>
+  
+  <!-- Yellow Crescent Moon (Facing Right) -->
+  <path d="M 55 35 C 20 50, 20 80, 55 95 C 35 80, 35 50, 55 35 Z" fill="#fbbf24"/>
+</svg>
