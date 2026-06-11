@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fbfbfd; /* Apple off-white */
+  --foreground: #1d1d1f; /* Deep charcoal */
+  
+  /* Mapping old themes to new sleek palette to prevent breakage */
+  --lavender: #e5e5ea; /* Subtle gray borders */
+  --lavender-light: #ffffff; /* Pure white surfaces */
+  --lavender-dark: #c7c7cc; /* Slightly darker gray */
+  
+  --butter: #f2f2f7; /* Secondary light gray surface */
+  --butter-light: #ffffff;
+  --butter-dark: #5e5ce6; /* YC/Apple Indigo Accent */
+  
+  --charcoal: #1d1d1f; /* High contrast black */
+  --warm-gray: #8e8e93; /* iOS secondary text */
+  
+  --card-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
+  --button-shadow: 0 2px 10px rgba(94, 92, 230, 0.25);
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+@theme {
+  --color-lavender-light: var(--lavender-light);
+  --color-lavender: var(--lavender);
+  --color-lavender-dark: var(--lavender-dark);
+  --color-butter-light: var(--butter-light);
+  --color-butter: var(--butter);
+  --color-butter-dark: var(--butter-dark);
+  --color-charcoal: var(--charcoal);
+  --color-warm-gray: var(--warm-gray);
+  
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  --font-dm-sans: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  
+  --animate-breath: breath 8s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-bloom: bloom 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  --animate-fade-in: fadeIn 0.4s ease-out forwards;
+  --animate-slide-up: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  
+  @keyframes breath {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.08); opacity: 1; filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.05)); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  @keyframes bloom {
+    0% { transform: scale(0.4) translateY(10px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glassmorphism custom classes */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: var(--card-shadow);
+}
+
+.glass-panel-yellow {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: var(--card-shadow);
+}
+
+.glass-panel-lavender {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow: var(--card-shadow);
+}
+
+/* Smooth transitions */
+.transition-all-300 {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Soft custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--lavender);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--lavender-dark);
+}
+
+/* Tactile 3D Card Flipping */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
