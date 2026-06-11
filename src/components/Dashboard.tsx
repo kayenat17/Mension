@@ -48,6 +48,8 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   const [cycleIrregularity, setCycleIrregularity] = useState<string | null>(null);
   const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [lmpInput, setLmpInput] = useState("");
+  const [lengthInput, setLengthInput] = useState("28");
+  const [durationInput, setDurationInput] = useState("5");
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [showCycleCalendar, setShowCycleCalendar] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());

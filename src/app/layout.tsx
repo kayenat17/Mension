@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Mension — Health Intelligence",
+  title: "Mension",
   description: "A warm, safe, and empathetic space for cognitive reframing, mood tracking, and mindful breathing.",
 };
 
