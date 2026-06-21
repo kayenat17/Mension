@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
   title: "Mension",
-  description: "A warm, safe, and empathetic space for cognitive reframing, mood tracking, and mindful breathing.",
+  description: "Understand if that message was toxic — in the context of your cycle",
 };
 
 export default function RootLayout({
@@ -15,6 +16,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-white text-charcoal antialiased min-h-screen flex flex-col md:flex-row font-sans">
         {children}
+        <Analytics />
       </body>
     </html>
   );
