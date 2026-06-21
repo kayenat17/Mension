@@ -146,6 +146,14 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
           <p className="text-[11px] text-warm-gray leading-relaxed px-2">
             With Mension, you're never alone. Private & synced.
           </p>
+
+           <a
+            href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform"
+            target="_blank"
+            className="text-[11px] text-purple-400 hover:text-purple-600 px-2 transition-colors"
+          >
+            Share feedback 💜
+          </a> 
         </div>
       </aside>
     </>
