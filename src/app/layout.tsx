@@ -15,7 +15,6 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-white text-charcoal antialiased min-h-screen flex flex-col md:flex-row font-sans">
         {children}
-        <Analytics />
       </body>
     </html>
   );
