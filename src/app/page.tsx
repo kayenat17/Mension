@@ -65,16 +65,7 @@ export default function Home() {
       </main>
 
       {/* Auth Modal */}
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-      
-      {/* Feedback Link */}
-      <a 
-        href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform" 
-        target="_blank"
-        style={{position: 'fixed', bottom: '16px', right: '16px', fontSize: '12px', color: '#9B82C4', textDecoration: 'none', background: '#F8F5FF', padding: '6px 12px', borderRadius: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)'}}
-      >
-        Feedback 💜
-      </a>
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} /> 
     </>
   );
 }
