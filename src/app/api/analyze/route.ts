@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
-import { requireAuth } from "@/utils/apiAuth";
-import { PHASE_CONTEXTS, normalizePhase } from "@/utils/phaseContexts";
 
 export async function POST(req: NextRequest) {
   try {
-    // Verify authentication (prevents unauthorized use of Groq credits)
-    const { error: authError } = await requireAuth(req);
-    if (authError) return authError;
-
     const { text, cycle_phase } = await req.json();
 
     if (!text) {
@@ -23,9 +17,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Map cycle phases to their emotional sensitivity context
+    const phaseContexts: Record<string, string> = {
+      menstrual:
+        "Bleeding phase. Progesterone and estrogen are at their lowest. Energy is naturally low, " +
+        "and physical/emotional vulnerability is high. Intuition is high, but feeling drained can " +
+        "make you second-guess your boundaries.",
+      follicular:
+        "Post-period. Estrogen is rising. Energy, optimism, and mental focus are increasing, " +
+        "meaning you are emotionally stable and clear-headed but might sometimes override your own " +
+        "boundaries in favor of making things work.",
+      ovulation:
+        "Fertile window. Estrogen peaks. You feel highly social, confident, and communicative, " +
+        "which can sometimes make you overly agreeable or prone to accommodating others at your own expense.",
+      luteal:
+        "Pre-period. Progesterone rises and drops. Anxiety, irritability, self-doubt, and vulnerability " +
+        "naturally peak. Toxic or manipulative messages can hit much harder and feel biologically destabilizing, " +
+        "often triggering intense self-blame.",
+      general:
+        "General state of mind. You want clarity and emotional grounding, separating facts from " +
+        "anxiety and self-doubt."
+    };
+
     // Normalize cycle phase input, defaulting to general
-    const phase = normalizePhase(cycle_phase);
-    const phaseContext = PHASE_CONTEXTS[phase];
+    let phase = (cycle_phase || "general").toLowerCase().trim();
+    if (!phaseContexts[phase]) {
+      phase = "general";
+    }
+
+    const phaseContext = phaseContexts[phase];
 
     // Initialize Groq API client
     const client = new Groq({ apiKey });

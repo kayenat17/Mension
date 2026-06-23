@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { HeartHandshake, AlertCircle, SendHorizonal, Activity, HelpCircle } from "lucide-react";
-import { getItem, setItem, removeItem, KEYS } from "@/utils/storageHelper";
 
 interface Message {
   id: string;
@@ -29,7 +28,7 @@ export default function OvaChat() {
   // Initial setup and health check
   useEffect(() => {
     // Load cycle phase preference
-    const savedPhase = getItem(KEYS.CYCLE_PHASE);
+    const savedPhase = localStorage.getItem("clara-cycle-phase");
     if (savedPhase) {
       setCyclePhase(savedPhase);
     }
@@ -41,7 +40,7 @@ export default function OvaChat() {
         return res.json();
       })
       .then((data) => {
-        if (!data.groq_api_configured) {
+        if (!data.gemini_api_configured) {
           setIsOfflineMode(true);
         } else {
           setIsOfflineMode(false);
@@ -53,7 +52,7 @@ export default function OvaChat() {
       });
 
     // Load Chat History
-    const savedChat = getItem(KEYS.CHAT_HISTORY);
+    const savedChat = localStorage.getItem("clara-chat-history");
     if (savedChat) {
       const parsed = JSON.parse(savedChat);
       const formatted = parsed.map((m: any) => ({
@@ -76,7 +75,7 @@ export default function OvaChat() {
   // Save chat history
   useEffect(() => {
     if (messages.length > 0) {
-      setItem(KEYS.CHAT_HISTORY, JSON.stringify(messages));
+      localStorage.setItem("clara-chat-history", JSON.stringify(messages));
     }
   }, [messages]);
 
@@ -205,7 +204,7 @@ export default function OvaChat() {
           timestamp: new Date(),
         },
       ]);
-      removeItem(KEYS.CHAT_HISTORY);
+      localStorage.removeItem("clara-chat-history");
     }
   };
 
@@ -237,7 +236,7 @@ export default function OvaChat() {
               value={cyclePhase}
               onChange={(e) => {
                 setCyclePhase(e.target.value);
-                setItem(KEYS.CYCLE_PHASE, e.target.value);
+                localStorage.setItem("clara-cycle-phase", e.target.value);
               }}
               className="text-xs bg-lavender-light border border-lavender rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-lavender-dark text-charcoal font-semibold"
             >
