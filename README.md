@@ -1,6 +1,8 @@
 # Mension 🌸
 
-Mension is a full-stack health intelligence and cycle-tracking platform. It helps users analyze confusing, anxious, or gaslit messages by aligning them with their body's current menstrual cycle phase, identifying patterns of behavior with warm, empathetic clarity.
+Mension is a full-stack women's health intelligence and cycle-tracking platform. It helps users analyze confusing, anxious, or gaslit messages by aligning them with their body's current menstrual cycle phase, identifying patterns of behavior with warm, empathetic clarity.
+
+> **Live at:** [mension.vercel.app](https://mension.vercel.app) (or your custom domain)
 
 Mension features **Ova**, a built-in AI therapist powered by the blazing-fast Groq engine, designed to give psychology-informed reframes based on the user's hormonal baseline.
 
@@ -14,7 +16,7 @@ Mension features **Ova**, a built-in AI therapist powered by the blazing-fast Gr
 
 ## 🛠 Tech Stack
 
-- **Frontend:** Next.js 14 (App Router), React, Tailwind CSS, Lucide Icons
+- **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS 4, Lucide Icons
 - **Backend:** Next.js API Routes
 - **Database & Auth:** Supabase
 - **AI / LLM:** Groq SDK (`llama-3.3-70b-versatile`)

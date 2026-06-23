@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
+import { requireAuth } from "@/utils/apiAuth";
 
 export async function POST(req: NextRequest) {
   try {
+    // Verify authentication (prevents unauthorized use of Groq credits)
+    const { error: authError } = await requireAuth(req);
+    if (authError) return authError;
+
     const { sender_label, messages, results } = await req.json();
 
     if (!sender_label || !messages || !results || !Array.isArray(messages) || !Array.isArray(results)) {

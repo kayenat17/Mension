@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
+import { PHASE_CONTEXTS, normalizePhase } from "@/utils/phaseContexts";
 
 export const dynamic = "force-dynamic";
 
@@ -19,17 +20,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Map cycle phases to active emotional sensitivity descriptions
-    const phaseContexts: Record<string, string> = {
-      menstrual: "Menstrual Phase (bleeding). Progesterone & estrogen are low. Energy is resting, intuition is high. Feeling physically vulnerable makes self-doubt creep in easily. Validate the need for nesting, resting, and quiet.",
-      follicular: "Follicular Phase. Estrogen is rising. Energy, optimism, and mental focus are increasing. Resilient, but might override boundaries to 'make things work'.",
-      ovulation: "Ovulation Phase. Estrogen peaks. Feeling highly social, communicative, and confident, though might become overly agreeable or prone to over-explaining.",
-      luteal: "Luteal Phase. Progesterone drops. Anxiety, irritability, and sensitivity peak. Toxic messages feel biologically destabilizing. Validate this biological shift so they don't blame themselves.",
-      general: "Quiet / General. Focus on overall emotional grounding, self-compassion, and factual clarity."
-    };
-
-    const phase = (cycle_phase || "general").toLowerCase().trim();
-    const phaseContext = phaseContexts[phase] || phaseContexts.general;
+    const phase = normalizePhase(cycle_phase);
+    const phaseContext = PHASE_CONTEXTS[phase];
 
     const systemPrompt = `You are Ova, a warm empathetic therapist. Be SHORT and conversational — 2 to 3 sentences MAX. Never use bullet points or long paragraphs.
 

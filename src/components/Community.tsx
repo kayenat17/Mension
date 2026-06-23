@@ -3,11 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Users, AlertCircle, HeartHandshake, Moon, ShieldAlert, Sparkles, Send } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/utils/supabaseClient";
-
-interface CommunityProps {
-  session?: any;
-  onLoginClick: () => void;
-}
+import { getItem, setItem, KEYS } from "@/utils/storageHelper";
+import { useMension } from "@/context/MensionContext";
 
 interface CommunityPost {
   id: string;
@@ -31,7 +28,8 @@ const generateAlias = () => {
   return `${adj}${noun}${num}`;
 };
 
-export default function Community({ session, onLoginClick }: CommunityProps) {
+export default function Community() {
+  const { session, isAuthenticated, openAuth } = useMension();
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [newPostContent, setNewPostContent] = useState("");
   const [alias, setAlias] = useState("");
@@ -41,15 +39,15 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
 
   useEffect(() => {
     // Setup Alias
-    let savedAlias = localStorage.getItem("clara-community-alias");
+    let savedAlias = getItem(KEYS.COMMUNITY_ALIAS);
     if (!savedAlias) {
       savedAlias = generateAlias();
-      localStorage.setItem("clara-community-alias", savedAlias);
+      setItem(KEYS.COMMUNITY_ALIAS, savedAlias);
     }
     setAlias(savedAlias);
 
     // Load Reacted Posts from local storage to prevent multi-voting
-    const savedReactions = localStorage.getItem("clara-community-reactions");
+    const savedReactions = getItem(KEYS.COMMUNITY_REACTIONS);
     if (savedReactions) {
       try {
         setReactedPosts(JSON.parse(savedReactions));
@@ -100,7 +98,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
 
   const getPhaseFromLocalStorage = () => {
     // Try to calculate from cycle tracker
-    const savedCycle = localStorage.getItem("clara-cycle-tracker");
+    const savedCycle = getItem(KEYS.CYCLE_TRACKER);
     if (savedCycle) {
       try {
         const parsed = JSON.parse(savedCycle);
@@ -109,7 +107,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
       } catch (e) {}
     }
     // Fallback to explicit phase selection
-    return localStorage.getItem("clara-cycle-phase") || "general";
+    return getItem(KEYS.CYCLE_PHASE) || "general";
   };
 
   const handlePost = async (e: React.FormEvent) => {
@@ -143,6 +141,9 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
   const handleReaction = async (postId: string, reactionType: "red_flag_count" | "trust_gut_count" | "give_time_count") => {
     if (reactedPosts[postId] || !isSupabaseConfigured()) return; // Already reacted or no DB
 
+    // Save previous reactions for potential rollback
+    const prevReactions = reactedPosts;
+
     // Optimistic UI update
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
@@ -154,23 +155,40 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
     // Update local storage
     const newReactions = { ...reactedPosts, [postId]: reactionType };
     setReactedPosts(newReactions);
-    localStorage.setItem("clara-community-reactions", JSON.stringify(newReactions));
+    setItem(KEYS.COMMUNITY_REACTIONS, JSON.stringify(newReactions));
 
-    // Update Supabase via RPC (function) or direct update
-    // Since we don't have an RPC function set up yet, we'll do a read-modify-write
-    // Note: In production, use a secure RPC call to prevent race conditions.
     try {
-      const post = posts.find(p => p.id === postId);
-      if (!post) return;
-      
-      const { error } = await supabase
-        .from("community_posts")
-        .update({ [reactionType]: post[reactionType] + 1 })
-        .eq("id", postId);
-        
-      if (error) throw error;
+      // Prefer atomic RPC (avoids race conditions between concurrent users)
+      // Falls back to read-modify-write if RPC function doesn't exist yet
+      const { error: rpcError } = await supabase.rpc("increment_reaction", {
+        post_id: postId,
+        reaction_field: reactionType,
+      });
+
+      if (rpcError) {
+        // RPC doesn't exist — fall back to direct update
+        console.warn("RPC increment_reaction not available, falling back to direct update:", rpcError.message);
+        const post = posts.find(p => p.id === postId);
+        if (!post) throw new Error("Post not found");
+
+        const { error: updateError } = await supabase
+          .from("community_posts")
+          .update({ [reactionType]: (post[reactionType] || 0) + 1 })
+          .eq("id", postId);
+
+        if (updateError) throw updateError;
+      }
     } catch (err) {
-      console.error("Error updating reaction:", err);
+      console.error("Error updating reaction, rolling back:", err);
+      // Roll back optimistic update (decrement the count, never below 0)
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          return { ...p, [reactionType]: Math.max(0, (p[reactionType] || 0) - 1) };
+        }
+        return p;
+      }));
+      setReactedPosts(prevReactions);
+      setItem(KEYS.COMMUNITY_REACTIONS, JSON.stringify(prevReactions));
     }
   };
 
@@ -236,7 +254,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
             </div>
           </div>
           <button
-            onClick={onLoginClick}
+            onClick={openAuth}
             className="px-4 py-2 bg-white hover:bg-lavender-light border border-lavender-dark/45 text-charcoal text-xs font-bold rounded-2xl transition-all hover:scale-102"
           >
             Create Free Account

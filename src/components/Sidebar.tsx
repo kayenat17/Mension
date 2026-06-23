@@ -2,17 +2,16 @@
 
 import React from "react";
 import { Home, HeartHandshake, Flower, Wind, BookOpen, Sparkles, User, LogOut, Users, Flame } from "lucide-react";
-import { supabase, isSupabaseConfigured } from "@/utils/supabaseClient";
 import MensionLogo from "@/components/MensionLogo";
+import { useMension } from "@/context/MensionContext";
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  session?: any;
-  onLoginClick?: () => void;
 }
 
-export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick }: SidebarProps) {
+export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
+  const { user, isAuthenticated, openAuth, signOut } = useMension();
   const navItems = [
     { id: "dashboard", label: "Analyzer", icon: Home },
     { id: "community", label: "Community", icon: Users },
@@ -23,12 +22,12 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
 
   const handleSignOut = async () => {
     if (confirm("Are you sure you want to sign out?")) {
-      await supabase.auth.signOut();
+      await signOut();
     }
   };
 
-  const userEmail = session?.user?.email || "";
-  const isLoggedIn = !!session;
+  const userEmail = user?.email || "";
+  const isLoggedIn = isAuthenticated;
 
   return (
     <>
@@ -70,7 +69,7 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
             </button>
           ) : (
             <button
-              onClick={onLoginClick}
+              onClick={openAuth}
               className="p-2.5 rounded-xl text-warm-gray hover:text-charcoal transition-colors"
               title="Sign In"
             >
@@ -135,7 +134,7 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
             </div>
           ) : (
             <button
-              onClick={onLoginClick}
+              onClick={openAuth}
               className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-2xl bg-lavender-light hover:bg-lavender border border-lavender text-charcoal font-semibold text-xs transition-all-300 hover:scale-102"
             >
               <User className="w-4 h-4" />

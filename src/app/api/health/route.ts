@@ -8,6 +8,6 @@ export async function GET() {
   
   return NextResponse.json({
     status: "healthy",
-    gemini_api_configured: hasKey  // kept same field name so frontend logic still works
+    groq_api_configured: hasKey
   });
 }
