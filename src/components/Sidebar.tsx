@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Home, HeartHandshake, Flower, Wind, BookOpen, Sparkles, User, LogOut, Users, Flame } from "lucide-react";
-import { supabase, isSupabaseConfigured } from "@/utils/supabaseClient";
+import { Home, HeartHandshake, Wind, User, LogOut, Users, Flame, ShoppingBag } from "lucide-react";
+import { supabase } from "@/utils/supabaseClient";
 import MensionLogo from "@/components/MensionLogo";
 
 interface SidebarProps {
@@ -18,6 +18,7 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
     { id: "community", label: "Community", icon: Users },
     { id: "chat", label: "Ova", icon: HeartHandshake },
     { id: "garden", label: "The Reset Room", icon: Flame },
+    { id: "crave-pantry", label: "Crave Pantry", icon: ShoppingBag },
     { id: "breathing", label: "Calm Space", icon: Wind },
   ];
 
@@ -32,13 +33,51 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
 
   return (
     <>
-      {/* Mobile Top Header */}
-      <header className="md:hidden flex items-center justify-between px-6 py-4 border-b border-lavender bg-white/80 backdrop-blur-md sticky top-0 z-40 w-full">
-        <div className="flex items-center space-x-2">
-          <MensionLogo className="text-2xl text-charcoal" />
-        </div>
+      {/* Mobile Top Header (Just for Logo) */}
+      <header 
+        className="md:hidden flex items-center justify-center px-6 py-4 bg-white sticky top-0 z-40 w-full cursor-pointer hover:opacity-80 transition-opacity"
+        onClick={() => setActiveTab('dashboard')}
+      >
+        <MensionLogo className="text-2xl text-charcoal" />
+      </header>
+
+      {/* Mobile Bottom Navigation (Pinterest style) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-black/5 flex items-center justify-around px-6 py-4 z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`p-3 rounded-full transition-all-300 ${
+                isActive
+                  ? "bg-[#121211] text-[#FFF6A4] scale-110 shadow-md"
+                  : "text-warm-gray hover:text-charcoal hover:bg-black/5"
+              }`}
+              title={item.label}
+              id={`nav-mobile-${item.id}`}
+            >
+              <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Desktop Top Navigation */}
+      <header className="hidden md:flex items-center justify-between w-full bg-white/90 backdrop-blur-xl px-8 py-4 z-40 sticky top-0 border-b border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
         
-        <nav className="flex space-x-1 items-center">
+        {/* Left: Logo (Clickable) */}
+        <div 
+          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity shrink-0" 
+          onClick={() => setActiveTab('dashboard')}
+          title="Go to Dashboard"
+        >
+          <MensionLogo className="text-2xl lg:text-3xl text-charcoal" />
+        </div>
+
+        {/* Center: Navigation Pills */}
+        <nav className="flex items-center justify-center space-x-2 flex-1 mx-8">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -46,88 +85,30 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`p-2.5 rounded-2xl transition-all-300 ${
+                id={`nav-desktop-${item.id}`}
+                className={`flex items-center space-x-2 px-4 py-2.5 rounded-full transition-all duration-300 font-medium text-sm group ${
                   isActive
-                    ? "bg-charcoal text-white shadow-sm scale-105"
-                    : "text-warm-gray hover:text-charcoal hover:bg-lavender-light"
+                    ? "bg-[#121211] text-white shadow-md"
+                    : "text-warm-gray hover:text-charcoal hover:bg-black/5"
                 }`}
-                title={item.label}
-                id={`nav-mobile-${item.id}`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className={`w-4 h-4 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-[#FFF6A4]" : "text-warm-gray/80"}`} />
+                <span className={isActive ? "font-bold" : ""}>{item.label}</span>
               </button>
             );
           })}
-
-          {/* Mobile Auth Button */}
-          {isLoggedIn ? (
-            <button
-              onClick={handleSignOut}
-              className="p-2.5 rounded-xl text-warm-gray hover:text-red-500 transition-colors"
-              title="Sign Out"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
-          ) : (
-            <button
-              onClick={onLoginClick}
-              className="p-2.5 rounded-xl text-warm-gray hover:text-charcoal transition-colors"
-              title="Sign In"
-            >
-              <User className="w-5 h-5" />
-            </button>
-          )}
         </nav>
-      </header>
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 min-h-screen border-r border-lavender bg-white p-6 sticky top-0 h-screen justify-between shrink-0 z-20">
-        <div className="flex flex-col space-y-8">
-          {/* Logo Section */}
-          <div className="flex items-center space-x-3 px-2 mt-4">
-            <MensionLogo className="text-[2.5rem] text-charcoal" />
-          </div>
-          <div className="px-3 -mt-4">
-            <span className="text-[10px] text-warm-gray font-semibold uppercase tracking-widest">Health Intelligence</span>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="flex flex-col space-y-1.5">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  id={`nav-desktop-${item.id}`}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all-300 font-medium text-sm group ${
-                  isActive
-                    ? "bg-butter text-butter-dark shadow-sm font-bold"
-                    : "text-warm-gray hover:text-charcoal hover:bg-lavender-light/60"
-                }`}
-              >
-                <Icon className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-butter-dark" : "text-warm-gray/80"}`} />
-                <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Profile/Auth Section at the Bottom */}
-        <div className="border-t border-lavender/50 pt-4 flex flex-col space-y-3">
+        {/* Right: Profile/Auth Section */}
+        <div className="flex items-center shrink-0">
           {isLoggedIn ? (
-            <div className="flex items-center justify-between bg-lavender-light/40 border border-lavender/40 px-3 py-2.5 rounded-2xl">
-              <div className="min-w-0 flex-1">
-                <span className="text-[10px] font-bold text-warm-gray uppercase tracking-wider block">Sync Active</span>
-                <span className="text-xs font-semibold text-charcoal truncate block" title={userEmail}>
-                  {userEmail}
-                </span>
-              </div>
+            <div className="flex items-center space-x-4 bg-black/5 px-4 py-2 rounded-full">
+              <span className="text-xs font-bold text-charcoal truncate max-w-[150px]" title={userEmail}>
+                {userEmail}
+              </span>
               <button
                 onClick={handleSignOut}
-                className="p-2 rounded-xl text-warm-gray hover:text-red-500 hover:bg-red-50 transition-all duration-200 shrink-0"
+                className="text-warm-gray hover:text-red-500 transition-all duration-200"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -136,26 +117,14 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
           ) : (
             <button
               onClick={onLoginClick}
-              className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-2xl bg-lavender-light hover:bg-lavender border border-lavender text-charcoal font-semibold text-xs transition-all-300 hover:scale-102"
+              className="flex items-center space-x-2 px-6 py-2.5 rounded-full bg-[#BCE7F0] hover:bg-[#A9DDE8] text-charcoal font-bold text-sm transition-all duration-300 hover:-translate-y-0.5 shadow-sm"
             >
               <User className="w-4 h-4" />
-              <span>Sign In to Sync</span>
+              <span>Sign In</span>
             </button>
           )}
-
-          <p className="text-[11px] text-warm-gray leading-relaxed px-2">
-            With Mension, you're never alone. Private & synced.
-          </p>
-
-           <a
-            href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform"
-            target="_blank"
-            className="text-[11px] text-purple-400 hover:text-purple-600 px-2 transition-colors"
-          >
-            Share feedback 💜
-          </a> 
         </div>
-      </aside>
+      </header>
     </>
   );
 }

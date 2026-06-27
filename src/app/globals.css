@@ -1,40 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
 @import "tailwindcss";
 
 :root {
-  --background: #fbfbfd; /* Apple off-white */
-  --foreground: #1d1d1f; /* Deep charcoal */
+  --background: #ffffff;
+  --foreground: #2d2d2d;
   
-  /* Mapping old themes to new sleek palette to prevent breakage */
-  --lavender: #e5e5ea; /* Subtle gray borders */
-  --lavender-light: #ffffff; /* Pure white surfaces */
-  --lavender-dark: #c7c7cc; /* Slightly darker gray */
+  --card-shadow: 0 2px 16px rgba(107, 79, 160, 0.08);
+  --button-shadow: 0 4px 14px rgba(107, 79, 160, 0.12);
   
-  --butter: #f2f2f7; /* Secondary light gray surface */
-  --butter-light: #ffffff;
-  --butter-dark: #5e5ce6; /* YC/Apple Indigo Accent */
-  
-  --charcoal: #1d1d1f; /* High contrast black */
-  --warm-gray: #8e8e93; /* iOS secondary text */
-  
-  --card-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
-  --button-shadow: 0 2px 10px rgba(94, 92, 230, 0.25);
-  
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
+  --radius-xl: 20px;
+  --radius-2xl: 100px;
 }
 
 @theme {
-  --color-lavender-light: var(--lavender-light);
-  --color-lavender: var(--lavender);
-  --color-lavender-dark: var(--lavender-dark);
-  --color-butter-light: var(--butter-light);
-  --color-butter: var(--butter);
-  --color-butter-dark: var(--butter-dark);
-  --color-charcoal: var(--charcoal);
-  --color-warm-gray: var(--warm-gray);
+  --color-lavender-light: #f5f3fb;
+  --color-lavender: #e6e0f8;
+  --color-lavender-dark: #6b4fa0;
   
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
-  --font-dm-sans: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  --color-butter-light: #fffcf0;
+  --color-butter: #fff3b0;
+  --color-butter-dark: #e6da99;
+  
+  --color-charcoal: #121211;
+  --color-warm-gray: #7A7A7A;
+  
+  --color-domingo-pink: #FF8698;
+  --color-domingo-mint: #D2EBBF;
+  --color-domingo-yellow: #FFF6A4;
+  --color-domingo-blue: #BCE7F0;
+  --color-domingo-orange: #FFB074;
+  
+  /* CycleCircle Theme Colors */
+  --color-tertiary-fixed: #e1e1f5;
+  --color-surface-container-highest: #e4e3db;
+  --color-surface-bright: #fbf9f1;
+  --color-on-tertiary: #ffffff;
+  --color-primary: #b40065;
+  --color-on-primary-fixed-variant: #8d004e;
+  --color-inverse-on-surface: #f3f1e9;
+  --color-surface: #fbf9f1;
+  --color-surface-variant: #e4e3db;
+  --color-outline-variant: #e3bdc7;
+  --color-error: #ba1a1a;
+  --color-on-primary-fixed: #3e001f;
+  --color-background: #fbf9f1;
+  --color-on-surface: #1b1c17;
+  --color-tertiary-container: #727385;
+  --color-outline: #8f6e78;
+  --color-tertiary: #595b6b;
+  --color-surface-container: #f0eee6;
+  --color-on-primary-container: #fffbff;
+  --color-inverse-primary: #ffb0ca;
+  --color-secondary-fixed-dim: #e3c0a0;
+  --color-on-tertiary-container: #fffbff;
+  --color-surface-tint: #b90068;
+  --color-secondary-container: #fed9b8;
+  --color-on-secondary-fixed-variant: #5a422a;
+  --color-on-surface-variant: #5b3f48;
+  --color-secondary-fixed: #ffdcbe;
+  --color-on-tertiary-fixed: #191b29;
+  --color-on-error-container: #93000a;
+  --color-on-secondary: #ffffff;
+  --color-on-tertiary-fixed-variant: #444655;
+  --color-primary-fixed-dim: #ffb0ca;
+  --color-secondary: #74593f;
+  --color-surface-dim: #dcdad2;
+  --color-on-secondary-container: #795d43;
+  --color-error-container: #ffdad6;
+  --color-primary-container: #e10080;
+  --color-primary-fixed: #ffd9e3;
+  --color-tertiary-fixed-dim: #c5c5d8;
+  --color-on-background: #1b1c17;
+  --color-inverse-surface: #30312c;
+  --color-surface-container-high: #eae8e0;
+  --color-surface-container-low: #f5f4ec;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-primary: #ffffff;
+  --color-on-secondary-fixed: #2a1704;
+  --color-on-error: #ffffff;
+
+  /* CycleCircle Spacing */
+  --spacing-container-margin: 24px;
+  --spacing-unit: 8px;
+  --spacing-gutter: 16px;
+  --spacing-section-gap: 64px;
+
+  /* CycleCircle Fonts */
+  --font-body-lg: "Be Vietnam Pro";
+  --font-label-md: "Be Vietnam Pro";
+  --font-headline-lg: "Epilogue";
+  --font-headline-xl: "Epilogue";
+  --font-button: "Be Vietnam Pro";
+  --font-headline-md: "Epilogue";
+  --font-body-md: "Be Vietnam Pro";
+  --font-headline-lg-mobile: "Epilogue";
+
+  /* CycleCircle Font Sizes */
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 1.6;
+  --text-label-md: 14px;
+  --text-label-md--line-height: 1.2;
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 1.2;
+  --text-headline-xl: 48px;
+  --text-headline-xl--line-height: 1.1;
+  --text-button: 16px;
+  --text-button--line-height: 1;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 1.3;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 1.6;
+  
+  --font-sans: var(--font-sans), system-ui, sans-serif;
+  --font-nunito: var(--font-sans), system-ui, sans-serif;
+  --font-serif: var(--font-serif), Georgia, Cambria, "Times New Roman", Times, serif;
   
   --animate-breath: breath 8s ease-in-out infinite;
   --animate-float: float 6s ease-in-out infinite;
@@ -134,3 +215,178 @@ body {
   transform: rotateY(180deg);
 }
 
+/* Mesh Gradients */
+.bg-mesh-lavender {
+  background-color: #f5f3fb;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(260,39%,85%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 100%, hsla(260,39%,85%,0.8) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(260,39%,95%,1) 0, transparent 50%);
+}
+
+.bg-mesh-butter {
+  background-color: #fffcf0;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(51,100%,84%,0.8) 0, transparent 50%), 
+    radial-gradient(at 100% 100%, hsla(51,100%,90%,1) 0, transparent 50%);
+}
+
+/* Organic blob masking */
+.blob-shape {
+  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+  animation: morph 8s ease-in-out infinite;
+}
+
+@keyframes morph {
+  0%, 100% {
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+  }
+  34% {
+    border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%;
+  }
+  67% {
+    border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%;
+  }
+}
+
+/* Base style resets */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+.filled-icon {
+  font-variation-settings: 'FILL' 1;
+}
+.bubbly-card {
+  box-shadow: 6px 6px 0px 0px rgba(180, 0, 101, 1);
+  transition: all 0.2s ease;
+}
+.bubbly-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px rgba(180, 0, 101, 1);
+}
+.organic-blob {
+  position: absolute;
+  z-index: -1;
+  filter: blur(40px);
+  opacity: 0.4;
+}
+
+/* Incinerator Theme Scoping */
+.incinerator-theme {
+  --color-on-surface-variant: #e3bdc7;
+  --color-inverse-primary: #b90068;
+  --color-surface-bright: #562c3c;
+  --color-surface: #290616;
+  --color-on-error-container: #ffdad6;
+  --color-on-tertiary: #00363a;
+  --color-surface-container-lowest: #220310;
+  --color-on-secondary: #5b005b;
+  --color-error-container: #93000a;
+  --color-secondary-fixed: #ffd7f5;
+  --color-surface-container-low: #330e1e;
+  --color-secondary-fixed-dim: #ffaaf3;
+  --color-background: #290616;
+  --color-on-secondary-fixed-variant: #810081;
+  --color-on-tertiary-fixed: #002022;
+  --color-primary-fixed-dim: #ffb0ca;
+  --color-on-tertiary-fixed-variant: #004f54;
+  --color-surface-container-high: #441d2d;
+  --color-tertiary-fixed: #7df4ff;
+  --color-outline-variant: #5b3f48;
+  --color-secondary: #ffaaf3;
+  --color-on-error: #690005;
+  --color-on-surface: #ffd9e3;
+  --color-surface-container: #381322;
+  --color-inverse-on-surface: #4c2333;
+  --color-on-primary: #640036;
+  --color-surface-tint: #ffb0ca;
+  --color-inverse-surface: #ffd9e3;
+  --color-surface-variant: #512737;
+  --color-on-primary-container: #58002f;
+  --color-on-primary-fixed-variant: #8d004e;
+  --color-on-secondary-fixed: #380038;
+  --color-surface-container-highest: #512737;
+  --color-primary-container: #ff479c;
+  --color-tertiary: #00dbe9;
+  --color-error: #ffb4ab;
+  --color-on-secondary-container: #ff9ef4;
+  --color-secondary-container: #8c028c;
+  --color-on-primary-fixed: #3e001f;
+  --color-tertiary-container: #00a0aa;
+  --color-surface-dim: #290616;
+  --color-primary: #ffb0ca;
+  --color-outline: #aa8892;
+  --color-primary-fixed: #ffd9e3;
+  --color-on-background: #ffd9e3;
+  --color-on-tertiary-container: #002f33;
+  --color-tertiary-fixed-dim: #00dbe9;
+
+  --font-headline-lg-mobile: "Syne", sans-serif;
+  --font-display-lg: "Syne", sans-serif;
+  --font-body-md: "Hanken Grotesk", sans-serif;
+  --font-headline-md: "Syne", sans-serif;
+  --font-body-lg: "Hanken Grotesk", sans-serif;
+  --font-label-md: "Space Mono", monospace;
+  --font-label-sm: "Space Mono", monospace;
+  --font-headline-lg: "Syne", sans-serif;
+
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  min-height: 100vh;
+}
+
+/* Incinerator Animations & Styles */
+@keyframes fire-flicker {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+.burn-effect { animation: fire-flicker 2s infinite ease-in-out; }
+
+.tape-edge {
+  clip-path: polygon(0% 0%, 100% 0%, 98% 50%, 100% 100%, 0% 100%, 2% 50%);
+}
+
+.glitch-hover:hover {
+  text-shadow: 2px 0 #00dbe9, -2px 0 #ff479c;
+}
+
+.page-burn-transition {
+  transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 1.2s ease-in, 
+              filter 1s ease-in;
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotate(-1deg) translate(0, 0); }
+  10% { transform: rotate(-1.5deg) translate(-2px, -1px); }
+  20% { transform: rotate(-0.5deg) translate(2px, 1px); }
+  30% { transform: rotate(-1.2deg) translate(-2px, 0); }
+  40% { transform: rotate(-0.8deg) translate(2px, -1px); }
+  50% { transform: rotate(-1deg) translate(-1px, 2px); }
+}
+
+.is-burning {
+  animation: shake 0.1s infinite !important;
+  transform: scale(0) rotate(10deg) !important;
+  opacity: 0 !important;
+  filter: contrast(3) brightness(2) blur(20px) !important;
+  pointer-events: none;
+}
+
+#flame-shader-container {
+  transition: opacity 1s ease-in-out;
+}

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Sparkles, Flower, Activity, ShieldCheck, FileText, Trash2, ArrowRight, UserCheck, AlertCircle, RefreshCw, Eye, Settings, Calendar, Check, Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/utils/supabaseClient";
 import { calculateCycleState } from "@/utils/cycleHelpers";
+import CravePantrySection from "./CravePantrySection";
+import InteractivePortrait from "./InteractivePortrait";
 
 interface SavedAnalysis {
   id: string | number;
@@ -1443,6 +1445,9 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
           </section>
         </div>
       </div>
+
+      <div className="w-full max-w-5xl mx-auto mt-12"><CravePantrySection currentPhase={currentPhaseNormalized} /></div>
+      <div className="w-full max-w-5xl mx-auto mt-12"><InteractivePortrait /></div>
 
       {/* Full Analysis Modal Overlay */}
       {viewingAnalysis && (

@@ -61,7 +61,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/30 backdrop-blur-sm animate-fade-in">
       {/* Modal Card */}
-      <div className="relative w-full max-w-md glass-panel rounded-3xl p-6 md:p-8 bg-white/95 border-lavender shadow-2xl animate-scale-in">
+      <div className="relative w-full max-w-md bg-white rounded-3xl p-6 md:p-8 border border-black/5 shadow-[0_4px_24px_rgba(107,79,160,0.12)] animate-scale-in">
         
         {/* Close Button */}
         <button

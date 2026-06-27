@@ -1,0 +1,330 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@0,700;1,700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .font-serif-display {
+            font-family: 'Playfair Display', serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .floating-interaction {
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .floating-interaction:hover {
+            transform: translateY(-8px);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "outline": "#7b7486",
+                        "on-background": "#1c1b1b",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ffb0cd",
+                        "surface-container": "#f0eded",
+                        "outline-variant": "#cbc3d7",
+                        "surface-container-high": "#eae7e7",
+                        "surface": "#fcf9f8",
+                        "tertiary-fixed": "#ffd9e4",
+                        "background": "#fcf9f8",
+                        "secondary-container": "#fcdf46",
+                        "primary-fixed-dim": "#d0bcff",
+                        "surface-variant": "#e5e2e1",
+                        "secondary-fixed-dim": "#e2c62d",
+                        "on-secondary-fixed": "#211b00",
+                        "primary-container": "#8455ef",
+                        "on-secondary-fixed-variant": "#524600",
+                        "on-primary-container": "#fffbff",
+                        "inverse-surface": "#313030",
+                        "surface-dim": "#dcd9d9",
+                        "on-secondary-container": "#726200",
+                        "surface-tint": "#6d3bd7",
+                        "on-primary-fixed": "#23005c",
+                        "inverse-on-surface": "#f3f0ef",
+                        "secondary": "#6d5e00",
+                        "tertiary-container": "#d23284",
+                        "surface-container-low": "#f6f3f2",
+                        "primary-fixed": "#e9ddff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#fcf9f8",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#8c0053",
+                        "on-surface": "#1c1b1b",
+                        "secondary-fixed": "#ffe24c",
+                        "on-surface-variant": "#494454",
+                        "inverse-primary": "#d0bcff",
+                        "primary": "#6b38d4",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e5e2e1",
+                        "on-tertiary-fixed": "#3e0022",
+                        "on-primary-fixed-variant": "#5516be",
+                        "tertiary": "#b10e6b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "xl": "80px",
+                        "lg": "48px",
+                        "margin-desktop": "64px",
+                        "sm": "12px",
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "md": "24px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Manrope"],
+                        "headline-md": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "label-sm": ["Manrope"],
+                        "label-bold": ["Manrope"],
+                        "headline-xl": ["Manrope"],
+                        "body-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "label-bold": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-sm transition-all duration-300 ease-in-out">
+<div class="flex justify-between items-center w-full px-margin-desktop py-4 max-w-screen-2xl mx-auto">
+<div class="font-headline-md text-headline-md font-extrabold tracking-tighter text-on-background">Mension</div>
+
+
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-[80px]">
+<!-- Hero Section: Magazine Cover Style -->
+<section class="min-h-screen grid grid-cols-1 lg:grid-cols-12 items-center px-margin-mobile md:px-margin-desktop py-xl gap-gutter overflow-hidden">
+<!-- Image Side -->
+<div class="lg:col-span-7 h-[85vh] relative rounded-xl overflow-hidden shadow-xl floating-interaction">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAI19ZjkHv2M9UKBqgov5wCA0xYbkmbUrqGbmwwpPBBj6sBT8DgzWvGd9kH78vYPGnkt1T0aieM1fEu-oGmrPl_lZDCTbKVFZQcOj5urimq-U3N_0W6LAzAS_K62aiSH9BfqurOBmpQ6bmTnriCFxkAPt8I-idefMNAOzH5OQCwDE1zWKrngShuG4dzW5Ti7GDIfArjaOCT9QfXJfc6U-Z9VENIfjGZtz8nlYBH7JsMBnbaL4ieysO7FMMnzSh4VXOkTRIDwZmOKo">
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+<div class="absolute bottom-md left-md text-white">
+<span class="font-label-bold text-label-bold uppercase tracking-widest bg-tertiary px-3 py-1 rounded-full">Essence of Space</span>
+</div>
+</div>
+<!-- Content Side -->
+<div class="lg:col-span-5 flex flex-col justify-center space-y-md lg:pl-md">
+<div class="space-y-sm">
+<span class="text-tertiary font-label-bold uppercase tracking-[0.2em] text-sm block">Wellness &amp; Design</span>
+<h1 class="font-serif-display text-5xl md:text-7xl lg:text-8xl leading-[1.1] text-on-background">
+                        The <span class="italic text-primary">Architecture</span> of Silence
+                    </h1>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg">
+                    How physical spaces influence our mental state and the profound power of minimalist environments in an overstimulated world.
+                </p>
+<div class="flex items-center gap-md pt-base">
+<div class="flex flex-col">
+<span class="font-label-bold text-xs uppercase text-outline">Written By</span>
+<span class="font-headline-md text-lg">Elena Vance</span>
+</div>
+<div class="w-[1px] h-10 bg-outline-variant"></div>
+<div class="flex flex-col">
+<span class="font-label-bold text-xs uppercase text-outline">Read Time</span>
+<span class="font-headline-md text-lg">12 Minutes</span>
+</div>
+</div>
+<div class="pt-md">
+<button class="bg-primary text-on-primary px-xl py-4 rounded-full font-label-bold uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-primary/20">
+                        Begin Journey
+                    </button>
+</div>
+</div>
+</section>
+<!-- Article Body Section -->
+<article class="max-w-screen-xl mx-auto px-margin-mobile md:px-margin-desktop py-xl space-y-xl">
+<!-- Introduction -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter transition-all duration-700 opacity-100 translate-y-0">
+<div class="md:col-span-2 hidden md:block transition-all duration-700 opacity-100 translate-y-0">
+<div class="sticky top-32 space-y-md transition-all duration-700 opacity-100 translate-y-0">
+<div class="h-[2px] w-full bg-secondary-fixed transition-all duration-700 opacity-100 translate-y-0"></div>
+<p class="text-xs font-label-bold uppercase tracking-widest text-outline-variant">Introduction</p>
+</div>
+</div>
+<div class="md:col-span-7 md:col-start-4 space-y-md transition-all duration-700 opacity-100 translate-y-0">
+<p class="font-body-lg text-2xl leading-relaxed first-letter:text-7xl first-letter:font-serif-display first-letter:text-primary first-letter:float-left first-letter:mr-3 first-letter:mt-2">
+                        Silence is not the absence of sound, but the presence of focus. In contemporary architecture, we are witnessing a shift from the purely functional to the atmospheric. The spaces we inhabit are silent witnesses to our psychological state, acting as mirrors to our inner complexity or as vessels for our peace.
+                    </p>
+<p class="font-body-md text-lg text-on-surface-variant leading-relaxed">
+                        When we remove the visual noise—the clutter, the jagged geometries, the aggressive saturations—we allow the mind to breathe. Minimalism, in this context, is not a stylistic choice but a neurological necessity.
+                    </p>
+</div>
+</div>
+<!-- Pull Quote Section -->
+<div class="relative w-full py-xl overflow-hidden transition-all duration-700 opacity-100 translate-y-0">
+<div class="absolute inset-0 bg-secondary-container/10 -skew-y-2 translate-y-4 transition-all duration-700 opacity-100 translate-y-0"></div>
+<div class="relative max-w-4xl mx-auto text-center px-md transition-all duration-700 opacity-100 translate-y-0">
+<span class="material-symbols-outlined text-tertiary text-6xl mb-md block" data-icon="format_quote" style="font-variation-settings: 'FILL' 1;">format_quote</span>
+<blockquote class="font-serif-display text-4xl md:text-6xl text-on-background leading-tight">
+                        "In the silence of a well-designed space, we find the volume of our own thoughts."
+                    </blockquote>
+<cite class="block mt-md font-label-bold text-outline uppercase tracking-widest not-italic">— Architectural Meditation</cite>
+</div>
+</div>
+<!-- Bento Content Sections -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md transition-all duration-700 opacity-100 translate-y-0">
+<!-- The Minimalist Mindset -->
+<div class="bg-surface-container-low p-md rounded-xl space-y-sm floating-interaction flex flex-col justify-between transition-all duration-700 opacity-100 translate-y-0">
+<div class="space-y-sm transition-all duration-700 opacity-100 translate-y-0">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container transition-all duration-700 opacity-100 translate-y-0">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+</div>
+<h3 class="font-headline-md text-primary">The Minimalist Mindset</h3>
+<p class="text-on-surface-variant">Architecture serves as an externalized cognitive structure. By simplifying the environment, we reduce the cognitive load required to process spatial information, facilitating deeper meditation.</p>
+</div>
+<div class="pt-md border-t border-outline-variant/30 flex justify-between items-center transition-all duration-700 opacity-100 translate-y-0">
+<span class="text-xs font-label-bold uppercase">Section 01</span>
+<span class="material-symbols-outlined text-primary" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+<!-- Secondary Image -->
+<div class="rounded-xl overflow-hidden relative group h-80 lg:h-auto transition-all duration-700 opacity-100 translate-y-0">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A serene minimalist interior featuring a low concrete bench, a single thin branch in a ceramic vase, and soft afternoon sunlight casting long, rhythmic shadows on a creamy plaster wall. The color palette is composed of soft beige, lavender-tinted whites, and a touch of warm butter yellow. The mood is incredibly calm, echoing the philosophy of high-end wellness architecture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlQKO9yaRMx8tOCCZTFG3zwHiYngCCbViah3OnQHc_HfwW2DzHvVt6zVAI4hKZbPWBex-ckIzXRhK36F0q7tsZNuIg6JZs56l-pMEsT_sKNlM00rz01KdQfH5hIlC5vPUNV1sLDNYbxxr1PYvySvO6oaK-z_glsB-2ONiOPSizJdcJn3qwq4GDCP_tCVqFJDHyzAsXVtksmZtj5VhZrseD74EjxZ1Q3luE1K2lmW6f3mPhJ8y1lPkvBwfZegw1-oL10nYttfcn9tI">
+<div class="absolute inset-0 bg-primary/20 mix-blend-overlay transition-all duration-700 opacity-100 translate-y-0"></div>
+</div>
+<!-- Light as a Catalyst -->
+<div class="bg-surface-container-high p-md rounded-xl space-y-sm floating-interaction flex flex-col justify-between transition-all duration-700 opacity-100 translate-y-0">
+<div class="space-y-sm transition-all duration-700 opacity-100 translate-y-0">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container transition-all duration-700 opacity-100 translate-y-0">
+<span class="material-symbols-outlined" data-icon="light_mode" style="font-variation-settings: 'FILL' 1;">light_mode</span>
+</div>
+<h3 class="font-headline-md text-on-secondary-container">Light as a Catalyst</h3>
+<p class="text-on-surface-variant">Natural light is the silent architect. It sculpts volume and defines time. In the architecture of silence, light is not just a utility; it is the primary emotional driver that connects us to the diurnal rhythm.</p>
+</div>
+<div class="pt-md border-t border-outline-variant/30 flex justify-between items-center transition-all duration-700 opacity-100 translate-y-0">
+<span class="text-xs font-label-bold uppercase">Section 02</span>
+<span class="material-symbols-outlined text-secondary" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+<!-- Intentional Geometry -->
+<div class="lg:col-span-2 bg-tertiary-fixed p-md rounded-xl grid md:grid-cols-2 gap-md items-center transition-all duration-700 opacity-100 translate-y-0">
+<div class="space-y-sm transition-all duration-700 opacity-100 translate-y-0">
+<div class="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container transition-all duration-700 opacity-100 translate-y-0">
+<span class="material-symbols-outlined" data-icon="category">category</span>
+</div>
+<h3 class="font-headline-md text-tertiary">Intentional Geometry</h3>
+<p class="text-on-surface-variant">Curves that mimic the natural world, coupled with straight lines that provide structural security, create a balanced psychological landscape. Geometry dictates the flow of energy and our path through the void.</p>
+</div>
+<div class="h-64 rounded-lg overflow-hidden shadow-inner transition-all duration-700 opacity-100 translate-y-0">
+<img class="w-full h-full object-cover" data-alt="Abstract architectural detail showcasing the intersection of two curved surfaces in a modern building. One surface is a pale lavender plaster, while the other is a soft butter-yellow polished stone. The lighting is ethereal and diffused, highlighting the texture and the elegant, minimalist geometry of the space. The overall aesthetic is clean, sophisticated, and deeply calming." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJnGxKp-2NBT2PuNIIOmW8piAqdKQ7qGNIQQsAjmYIHtNqf7AML1HnKI-UzUctLBavgyyfLJP3cx1TQ_Yn--8jr7L5sCHD4i7iYnjFlPmixWDeG_W97IUbBLbK_mkWDrOO_9df_glGCJJSisTAaFOXKBks9q3CoaQpxmri15ga1PVaJ_gH1apWoCBvMTkrkk5MnRdSv8ZbjGM4YtzJoyO5Xc-G3S_-miNsKGXRUOS4qFANf5kZfZ5eQn3xHMWQiaxim6XPCCg9DpU">
+</div>
+</div>
+<!-- CTA Card -->
+<div class="bg-primary text-on-primary p-md rounded-xl flex flex-col justify-center items-center text-center space-y-md transition-all duration-700 opacity-100 translate-y-0">
+<h4 class="font-headline-md">Download the Design Guide</h4>
+<p class="text-sm opacity-90">Principles for creating your own silent sanctuary at home.</p>
+<button class="bg-surface text-primary px-lg py-3 rounded-full font-label-bold uppercase text-xs tracking-tighter hover:bg-secondary-fixed transition-colors">Get Access</button>
+</div>
+</div>
+</article>
+<!-- Newsletter / Footer Call to Action -->
+<section class="max-w-screen-2xl mx-auto px-margin-mobile md:px-margin-desktop pb-xl">
+<div class="bg-surface-container rounded-[2rem] p-lg md:p-xl flex flex-col items-center text-center space-y-md relative overflow-hidden">
+<div class="absolute top-0 right-0 w-64 h-64 bg-tertiary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+<h2 class="font-serif-display text-4xl md:text-5xl max-w-2xl relative z-10">Cultivate your interior world with our monthly curation.</h2>
+<div class="flex flex-col md:flex-row gap-base w-full max-w-md relative z-10">
+<input class="flex-grow rounded-full border-transparent bg-background px-md py-4 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" placeholder="email@address.com" type="email">
+<button class="bg-on-background text-background px-lg py-4 rounded-full font-label-bold uppercase tracking-widest hover:opacity-90">Subscribe</button>
+</div>
+<p class="text-xs text-outline tracking-wide relative z-10">Join 45,000+ architects and wellness seekers.</p>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-xl mt-xl bg-surface-container">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-desktop gap-md w-full max-w-screen-2xl mx-auto">
+<div class="font-headline-md text-headline-md text-on-surface">Mension</div>
+<div class="flex flex-wrap justify-center gap-md">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-tertiary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-tertiary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-tertiary transition-colors" href="#">Contact Us</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-tertiary transition-colors" href="#">Careers</a>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant opacity-90">
+                © 2024 Mension Wellness. All rights reserved.
+            </div>
+</div>
+</footer>
+<script>
+        // Simple scroll micro-interaction for Navbar
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 20) {
+                nav.classList.add('py-2', 'shadow-md');
+                nav.classList.remove('py-4', 'shadow-sm');
+            } else {
+                nav.classList.add('py-4', 'shadow-sm');
+                nav.classList.remove('py-2', 'shadow-md');
+            }
+        });
+
+        // Intersection Observer for subtle fade-in reveals
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-10');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('article section, article div, .bento-item').forEach(el => {
+            el.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-10');
+            observer.observe(el);
+        });
+    </script>
+
+
+</body></html>

@@ -37,7 +37,7 @@ export function calculateCycleState(
   }
 
   // Calculate current cycle day (1-indexed)
-  const currentDay = (diffDays % cycleLength) + 1;
+  const currentDay = diffDays + 1;
   const daysUntilNextPeriod = cycleLength - currentDay + 1;
 
   // Luteal phase is constant at 14 days before next period

@@ -1,0 +1,2292 @@
+commit d42c5a62cde3c085d294ef51e095a9a4dd2fbee2
+Author: Abbas3kay <muhdabbas2201@gmail.com>
+Date:   Wed Jun 24 02:11:55 2026 +0530
+
+    Revert "feat: add dashboard components, shared components, context, utils, and supabase config"
+    
+    This reverts commit 95d6f735aa2dbf61da2862fa832de65884b39ce0.
+
+diff --git a/src/components/dashboard/AnalysisReviewModal.tsx b/src/components/dashboard/AnalysisReviewModal.tsx
+deleted file mode 100644
+index 66bac9a..0000000
+--- a/src/components/dashboard/AnalysisReviewModal.tsx
++++ /dev/null
+@@ -1,72 +0,0 @@
+-"use client";
+-
+-import React from "react";
+-import type { SavedAnalysis } from "./types";
+-
+-interface AnalysisReviewModalProps {
+-  analysis: SavedAnalysis | null;
+-  onClose: () => void;
+-}
+-
+-export default function AnalysisReviewModal({ analysis, onClose }: AnalysisReviewModalProps) {
+-  if (!analysis) return null;
+-
+-  return (
+-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/40 backdrop-blur-sm animate-fade-in">
+-      <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-lavender/50 relative">
+-        <button
+-          onClick={onClose}
+-          className="absolute top-5 right-5 p-2 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500 transition-colors cursor-pointer"
+-        >
+-          ✕
+-        </button>
+-
+-        <div className="flex items-center gap-2 mb-6">
+-          <span className="text-xl">📝</span>
+-          <h3 className="font-dm-sans font-bold text-xl text-charcoal">Analysis Review</h3>
+-        </div>
+-
+-        <div className="space-y-6">
+-          <div className="bg-lavender-light/30 border border-lavender/40 rounded-2xl p-4 space-y-2">
+-            <div className="flex items-center gap-2">
+-              <span className="text-[10px] text-warm-gray font-bold uppercase tracking-wider">Context</span>
+-              <span className="text-[9px] uppercase font-bold tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+-                {analysis.phase} Phase
+-              </span>
+-              {analysis.sender_label && (
+-                <span className="text-[9px] uppercase font-bold tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-butter-dark/50">
+-                  From: {analysis.sender_label}
+-                </span>
+-              )}
+-            </div>
+-            <p className="text-sm text-charcoal/80 italic border-l-2 border-lavender-dark pl-3 py-1">&ldquo;{analysis.message}&rdquo;</p>
+-          </div>
+-
+-          <div className="space-y-4">
+-            <h4 className="text-xs font-bold text-charcoal uppercase tracking-wider">Ova&apos;s Insight</h4>
+-            <div className="text-sm text-charcoal/90 leading-relaxed space-y-3 whitespace-pre-wrap">
+-              {analysis.result.split("\n\n").map((paragraph: string, index: number) => {
+-                if (paragraph.startsWith("###")) {
+-                  return <h5 key={index} className="font-dm-sans font-bold text-base text-charcoal pt-2">{paragraph.replace("### ", "")}</h5>;
+-                }
+-                if (paragraph.startsWith("####")) {
+-                  return <h6 key={index} className="font-dm-sans font-bold text-sm text-charcoal/90 uppercase tracking-wide pt-1">{paragraph.replace("#### ", "")}</h6>;
+-                }
+-                return <p key={index} className="text-charcoal/95 font-medium">{paragraph}</p>;
+-              })}
+-            </div>
+-          </div>
+-        </div>
+-
+-        <div className="mt-8 pt-4 border-t border-lavender/30 flex justify-end">
+-          <button
+-            onClick={onClose}
+-            className="px-6 py-2.5 bg-butter hover:bg-butter-dark text-charcoal font-bold rounded-2xl transition-all shadow-sm cursor-pointer"
+-          >
+-            Close Review
+-          </button>
+-        </div>
+-      </div>
+-    </div>
+-  );
+-}
+diff --git a/src/components/dashboard/CycleTracker.tsx b/src/components/dashboard/CycleTracker.tsx
+deleted file mode 100644
+index 274f659..0000000
+--- a/src/components/dashboard/CycleTracker.tsx
++++ /dev/null
+@@ -1,495 +0,0 @@
+-"use client";
+-
+-import React, { useState, useEffect, useCallback } from "react";
+-import { Calendar, Settings, Activity, Check, Heart, AlertCircle, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+-import { supabase } from "@/utils/supabaseClient";
+-import { calculateCycleState } from "@/utils/cycleHelpers";
+-import { getItem, setItem, KEYS } from "@/utils/storageHelper";
+-import type { CycleData, CycleLog } from "./types";
+-
+-interface CycleTrackerProps {
+-  session?: any;
+-  cycleData: CycleData | null;
+-  cycleLogs: CycleLog[];
+-  onCycleDataChange: (data: CycleData) => void;
+-  onCycleLogsChange: (logs: CycleLog[]) => void;
+-  onStartChat: () => void;
+-  onLoginClick: () => void;
+-}
+-
+-const phaseDetails: Record<string, { title: string; tagline: string; description: string; moonIcon: React.ReactNode }> = {
+-  menstrual: {
+-    title: "Menstrual Phase", tagline: "Bleeding ☁️",
+-    description: "Progesterone & estrogen are low. Energy is resting, intuition is high.",
+-    moonIcon: <svg className="w-5 h-5 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /></svg>
+-  },
+-  follicular: {
+-    title: "Follicular Phase", tagline: "Post-Period 🌱",
+-    description: "Estrogen is rising. Energy, optimism, and mental focus are increasing.",
+-    moonIcon: <svg className="w-5 h-5 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 1 0 18V3z" fill="currentColor" className="text-butter-dark" /></svg>
+-  },
+-  ovulation: {
+-    title: "Ovulation Phase", tagline: "Fertile Window ☀️",
+-    description: "Estrogen peaks. You feel highly social, confident, and communicative.",
+-    moonIcon: <svg className="w-5 h-5 text-butter-dark shrink-0 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="9" fill="currentColor" /><circle cx="12" cy="12" r="9" className="text-butter animate-ping absolute opacity-25" /></svg>
+-  },
+-  luteal: {
+-    title: "Luteal Phase", tagline: "Pre-Period ⛈️",
+-    description: "Progesterone climbs then drops. Anxiety, irritability, and sensitivity peak.",
+-    moonIcon: <svg className="w-5 h-5 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 0 0 18V3z" fill="currentColor" className="text-butter-dark" /></svg>
+-  }
+-};
+-
+-const phaseVisuals: Record<string, any> = {
+-  menstrual: {
+-    color: "lavender", bgGradient: "from-lavender/40 via-lavender-light/10 to-transparent",
+-    dialGlow: "rgba(188, 170, 240, 0.25)", accentText: "text-purple-600",
+-    accentBg: "bg-lavender text-purple-700 border-lavender-dark/50",
+-    progressStroke: "stroke-purple-300",
+-    insights: [
+-      { title: "Estrogen", value: 15, color: "bg-lavender-dark" },
+-      { title: "Progesterone", value: 10, color: "bg-lavender" },
+-      { title: "Energy", value: 30, color: "bg-lavender-dark" },
+-      { title: "Sensitivity", value: 85, color: "bg-purple-400" }
+-    ],
+-    pregnancyChance: "Very Low",
+-    symptoms: ["Cramps", "Fatigue", "Backache", "Heavy Flow", "Nesting", "Cozy Vibes"],
+-    mensionTip: "Your energy is turning inward. Cancel non-essential plans and let yourself rest."
+-  },
+-  follicular: {
+-    color: "butter", bgGradient: "from-butter/30 via-butter-light/10 to-transparent",
+-    dialGlow: "rgba(252, 226, 119, 0.2)", accentText: "text-amber-700",
+-    accentBg: "bg-butter-light text-amber-800 border-butter-dark/50",
+-    progressStroke: "stroke-butter-dark",
+-    insights: [
+-      { title: "Estrogen", value: 65, color: "bg-butter-dark" },
+-      { title: "Progesterone", value: 15, color: "bg-butter" },
+-      { title: "Energy", value: 75, color: "bg-butter-dark" },
+-      { title: "Sensitivity", value: 40, color: "bg-lavender-dark" }
+-    ],
+-    pregnancyChance: "Medium",
+-    symptoms: ["High Energy", "Clear Skin", "Focused", "Happy", "Productive", "Light discharge"],
+-    mensionTip: "Estrogen is rising, fueling optimism and resilience."
+-  },
+-  ovulation: {
+-    color: "butter-lavender", bgGradient: "from-butter/45 via-lavender-light/20 to-transparent",
+-    dialGlow: "rgba(252, 226, 119, 0.3)", accentText: "text-amber-850",
+-    accentBg: "bg-butter border-butter-dark text-amber-900",
+-    progressStroke: "stroke-butter-dark",
+-    insights: [
+-      { title: "Estrogen", value: 95, color: "bg-butter-dark" },
+-      { title: "Progesterone", value: 45, color: "bg-butter" },
+-      { title: "Energy", value: 95, color: "bg-butter-dark" },
+-      { title: "Sensitivity", value: 50, color: "bg-lavender" }
+-    ],
+-    pregnancyChance: "High (Fertile)",
+-    symptoms: ["Social Energy", "Bloating", "High Libido", "Bright Eyes", "Optimistic", "Mild Cramps"],
+-    mensionTip: "Estrogen and testosterone peak today, making you magnetic and highly communicative."
+-  },
+-  luteal: {
+-    color: "lavender-butter", bgGradient: "from-lavender/50 via-butter-light/15 to-transparent",
+-    dialGlow: "rgba(188, 170, 240, 0.3)", accentText: "text-purple-600",
+-    accentBg: "bg-lavender text-purple-700 border-lavender-dark/60",
+-    progressStroke: "stroke-purple-400",
+-    insights: [
+-      { title: "Estrogen", value: 45, color: "bg-lavender" },
+-      { title: "Progesterone", value: 80, color: "bg-purple-400" },
+-      { title: "Energy", value: 50, color: "bg-butter-dark" },
+-      { title: "Sensitivity", value: 95, color: "bg-purple-500" }
+-    ],
+-    pregnancyChance: "Low",
+-    symptoms: ["Cravings", "Anxiety", "Mood Swings", "Tender Breasts", "Bloating", "Restlessness"],
+-    mensionTip: "Progesterone drops sharply, triggering emotional sensitivity and threat detection."
+-  }
+-};
+-
+-export default function CycleTracker({ session, cycleData, cycleLogs, onCycleDataChange, onCycleLogsChange, onStartChat, onLoginClick }: CycleTrackerProps) {
+-  const [isEditingCycle, setIsEditingCycle] = useState(false);
+-  const [lmpInput, setLmpInput] = useState(cycleData?.lmp || "");
+-  const [lengthInput, setLengthInput] = useState(String(cycleData?.cycleLength || 28));
+-  const [durationInput, setDurationInput] = useState(String(cycleData?.periodDuration || 5));
+-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
+-  const [showCycleCalendar, setShowCycleCalendar] = useState(false);
+-  const [calendarMonth, setCalendarMonth] = useState(() => cycleData?.lmp ? new Date(cycleData.lmp) : new Date());
+-  const [isCycleDelayed, setIsCycleDelayed] = useState(false);
+-
+-  // Load symptoms
+-  useEffect(() => {
+-    const saved = getItem(KEYS.LOGGED_SYMPTOMS);
+-    if (saved) {
+-      try { setSelectedSymptoms(JSON.parse(saved)); } catch {}
+-    }
+-  }, []);
+-
+-  // Persist symptoms
+-  useEffect(() => {
+-    setItem(KEYS.LOGGED_SYMPTOMS, JSON.stringify(selectedSymptoms));
+-  }, [selectedSymptoms]);
+-
+-  // Compute cycle state
+-  const cycleState = cycleData ? calculateCycleState(cycleData.lmp, cycleData.cycleLength, cycleData.periodDuration) : null;
+-  const currentPhase = cycleState ? cycleState.phase : "general";
+-
+-  // Ensure phase matches one of our keys
+-  const phaseKey = (cycleState && ["menstrual", "follicular", "ovulation", "luteal"].includes(cycleState.phase))
+-    ? cycleState.phase as "menstrual" | "follicular" | "ovulation" | "luteal"
+-    : "follicular";
+-  const phaseVisual = phaseVisuals[phaseKey];
+-  const activePhaseDetails = phaseDetails[phaseKey];
+-
+-  // SVG dial math
+-  const radius = 80, stroke = 6;
+-  const normalizedRadius = radius - stroke * 2;
+-  const circumference = normalizedRadius * 2 * Math.PI;
+-  const strokeDashoffset = cycleState && cycleData
+-    ? circumference - (cycleState.currentDay / cycleData.cycleLength) * circumference
+-    : circumference;
+-
+-  // Anomaly detection
+-  useEffect(() => {
+-    if (cycleState && cycleData) {
+-      setIsCycleDelayed(cycleState.currentDay > cycleData.cycleLength + 3);
+-    }
+-  }, [cycleState, cycleData]);
+-
+-  // Expose phase
+-  useEffect(() => {
+-    setItem(KEYS.CURRENT_PHASE, phaseKey);
+-  }, [phaseKey]);
+-
+-  const getDaysInMonth = useCallback((date: Date) => {
+-    const year = date.getFullYear();
+-    const month = date.getMonth();
+-    const firstDayIndex = new Date(year, month, 1).getDay();
+-    const totalDays = new Date(year, month + 1, 0).getDate();
+-    const prevMonthTotalDays = new Date(year, month, 0).getDate();
+-    const prev = [];
+-    for (let i = firstDayIndex - 1; i >= 0; i--) prev.push({ day: prevMonthTotalDays - i, isCurrentMonth: false, date: new Date(year, month - 1, prevMonthTotalDays - i) });
+-    const current = [];
+-    for (let i = 1; i <= totalDays; i++) current.push({ day: i, isCurrentMonth: true, date: new Date(year, month, i) });
+-    const next = [];
+-    for (let i = 1; i <= 42 - prev.length - current.length; i++) next.push({ day: i, isCurrentMonth: false, date: new Date(year, month + 1, i) });
+-    return [...prev, ...current, ...next];
+-  }, []);
+-
+-  const handleDayClick = (dayDate: Date) => {
+-    const yyyy = dayDate.getFullYear();
+-    const mm = String(dayDate.getMonth() + 1).padStart(2, '0');
+-    const dd = String(dayDate.getDate()).padStart(2, '0');
+-    setLmpInput(`${yyyy}-${mm}-${dd}`);
+-  };
+-
+-  const isSelectedLmp = (dayDate: Date) => {
+-    if (!lmpInput) return false;
+-    const d = new Date(lmpInput);
+-    return dayDate.getFullYear() === d.getFullYear() && dayDate.getMonth() === d.getMonth() && dayDate.getDate() === d.getDate();
+-  };
+-
+-  const isBleedingDay = (dayDate: Date) => {
+-    if (!lmpInput) return false;
+-    const lmp = new Date(lmpInput);
+-    const lmpM = new Date(lmp.getFullYear(), lmp.getMonth(), lmp.getDate());
+-    const targetM = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
+-    const diff = Math.floor((targetM.getTime() - lmpM.getTime()) / (1000 * 60 * 60 * 24));
+-    return diff >= 0 && diff < (cycleData?.periodDuration || 5);
+-  };
+-
+-  const isPredictedOvulation = (dayDate: Date) => {
+-    if (!lmpInput) return false;
+-    const lmp = new Date(lmpInput);
+-    const lmpM = new Date(lmp.getFullYear(), lmp.getMonth(), lmp.getDate());
+-    const targetM = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
+-    const diff = Math.floor((targetM.getTime() - lmpM.getTime()) / (1000 * 60 * 60 * 24));
+-    const length = cycleData?.cycleLength || 28;
+-    const cycleDay = (diff % length) + 1;
+-    const ovulationDay = length - 14;
+-    return cycleDay === ovulationDay || cycleDay === ovulationDay + 1;
+-  };
+-
+-  const handleSaveCycle = (e: React.FormEvent) => {
+-    e.preventDefault();
+-    if (!lmpInput) return;
+-    onCycleDataChange({ lmp: lmpInput, cycleLength: Number(lengthInput), periodDuration: Number(durationInput) });
+-    setItem(KEYS.CYCLE_TRACKER, JSON.stringify({ lmp: lmpInput, cycleLength: Number(lengthInput), periodDuration: Number(durationInput) }));
+-    setIsEditingCycle(false);
+-  };
+-
+-  const handleLogPeriod = async (dateStr: string) => {
+-    if (!session) { onLoginClick(); return; }
+-    try {
+-      const { error } = await supabase.from('cycle_logs').insert({ user_id: session.user.id, start_date: dateStr });
+-      if (error) throw error;
+-      // Signal parent to reload
+-      window.location.reload();
+-    } catch (err) {
+-      console.error("Failed to log period:", err);
+-      alert("Failed to log period. Ensure your database table is set up.");
+-    }
+-  };
+-
+-  const handleDeleteLog = async (logId: string) => {
+-    try {
+-      const { error } = await supabase.from('cycle_logs').delete().eq('id', logId);
+-      if (error) throw error;
+-      window.location.reload();
+-    } catch (err) {
+-      console.error("Failed to delete log:", err);
+-    }
+-  };
+-
+-  const daysGrid = getDaysInMonth(calendarMonth);
+-
+-  const renderCalendar = (interactive: boolean) => (
+-    <div className="border border-lavender rounded-3xl p-4 bg-white/90 shadow-sm space-y-3 relative z-10">
+-      <div className="flex items-center justify-between">
+-        <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
+-          className="p-1.5 rounded-xl hover:bg-lavender-light text-charcoal transition-all cursor-pointer border border-lavender/30 bg-white/50">
+-          <ChevronLeft className="w-4 h-4" />
+-        </button>
+-        <span className="font-dm-sans font-bold text-xs text-charcoal uppercase tracking-wider">
+-          {calendarMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+-        </span>
+-        <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
+-          className="p-1.5 rounded-xl hover:bg-lavender-light text-charcoal transition-all cursor-pointer border border-lavender/30 bg-white/50">
+-          <ChevronRight className="w-4 h-4" />
+-        </button>
+-      </div>
+-      <div className="grid grid-cols-7 gap-1 text-center">
+-        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(wd => (
+-          <span key={wd} className="text-[9px] font-bold text-warm-gray uppercase tracking-wide">{wd}</span>
+-        ))}
+-      </div>
+-      <div className="grid grid-cols-7 gap-1">
+-        {daysGrid.map((cell, idx) => {
+-          const isSelected = isSelectedLmp(cell.date);
+-          const isBleeding = isBleedingDay(cell.date);
+-          const isOvulating = isPredictedOvulation(cell.date);
+-          const today = new Date(); today.setHours(0, 0, 0, 0);
+-          const isFuture = cell.date > today;
+-          if (interactive) {
+-            return (
+-              <button type="button" key={idx} onClick={() => handleDayClick(cell.date)}
+-                disabled={!cell.isCurrentMonth || isFuture}
+-                className={`h-8 w-8 mx-auto flex flex-col items-center justify-center text-xs rounded-full transition-all duration-200 cursor-pointer relative ${
+-                  !cell.isCurrentMonth || isFuture ? "text-warm-gray/20 pointer-events-none"
+-                  : isSelected ? "bg-butter text-charcoal font-bold border-2 border-lavender-dark shadow-sm scale-110"
+-                  : isBleeding ? "bg-lavender text-purple-700 font-semibold border border-lavender-dark/30 shadow-inner"
+-                  : isOvulating ? "border border-dashed border-butter-dark bg-butter-light/50 text-charcoal font-bold"
+-                  : "hover:bg-lavender-light/50 text-charcoal"
+-                }`}>
+-                <span>{cell.day}</span>
+-                {cell.isCurrentMonth && isBleeding && !isSelected && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-purple-500"></span>}
+-                {cell.isCurrentMonth && isOvulating && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-butter-dark animate-pulse"></span>}
+-              </button>
+-            );
+-          }
+-          return (
+-            <div key={idx} className={`h-8 w-8 mx-auto flex flex-col items-center justify-center text-xs rounded-full relative ${
+-              !cell.isCurrentMonth ? "text-warm-gray/25"
+-              : isSelected ? "bg-butter text-charcoal font-bold border-2 border-lavender-dark shadow-sm scale-110"
+-              : isBleeding ? "bg-lavender text-purple-700 font-semibold border border-lavender-dark/30 shadow-inner"
+-              : isOvulating ? "border border-dashed border-butter-dark bg-butter-light/50 text-charcoal font-bold"
+-              : "text-charcoal"
+-            }`}>
+-              <span>{cell.day}</span>
+-              {cell.isCurrentMonth && isBleeding && !isSelected && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-purple-500"></span>}
+-              {cell.isCurrentMonth && isOvulating && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-butter-dark animate-pulse"></span>}
+-            </div>
+-          );
+-        })}
+-      </div>
+-    </div>
+-  );
+-
+-  // Setup view
+-  if (!cycleData || isEditingCycle) {
+-    return (
+-      <div className="glass-panel rounded-3xl p-6 border-lavender bg-white/60 space-y-5 animate-fade-in">
+-        <div className="flex items-center justify-between border-b border-lavender/30 pb-3">
+-          <div className="flex items-center space-x-2">
+-            <Calendar className="w-5 h-5 text-purple-400" />
+-            <h3 className="font-dm-sans font-bold text-base text-charcoal">Align with your Menstrual Cycle</h3>
+-          </div>
+-          {cycleData && (
+-            <button onClick={() => setIsEditingCycle(false)} className="text-xs font-semibold text-warm-gray hover:text-charcoal px-3 py-1 rounded-xl hover:bg-lavender-light transition-all">Cancel</button>
+-          )}
+-        </div>
+-        {!session ? (
+-          <div className="bg-lavender-light/40 border border-lavender/50 p-6 rounded-2xl text-center space-y-4">
+-            <p className="text-sm text-charcoal font-medium">Please sign in to securely save your health history and enable anomaly detection.</p>
+-            <button onClick={onLoginClick} className="bg-butter hover:bg-butter-dark text-charcoal font-bold py-2.5 px-6 rounded-2xl transition-all shadow-sm">Sign in to Tracker</button>
+-          </div>
+-        ) : (
+-          <form onSubmit={handleSaveCycle} className="space-y-6">
+-            <div className="space-y-3">
+-              <label className="block text-[10px] font-bold text-charcoal uppercase tracking-wider">Select Date on Calendar:</label>
+-              {renderCalendar(true)}
+-              {lmpInput && (
+-                <button type="button" onClick={() => handleLogPeriod(lmpInput)}
+-                  className="w-full mt-4 bg-butter hover:bg-butter-dark text-charcoal border border-butter-dark/50 font-bold py-3.5 rounded-2xl transition-all-300 shadow-sm cursor-pointer">
+-                  Log Date: {new Date(lmpInput).toLocaleDateString()}
+-                </button>
+-              )}
+-            </div>
+-            <div className="pt-4 border-t border-lavender/40">
+-              <button type="button" onClick={() => handleLogPeriod(new Date().toISOString().split("T")[0])}
+-                className="w-full bg-lavender hover:bg-lavender-dark text-purple-900 border border-lavender-dark/50 font-bold py-3.5 rounded-2xl transition-all-300 shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+-                <span className="text-lg">🩸</span><span>My Period Started Today</span>
+-              </button>
+-            </div>
+-            {cycleLogs.length > 0 && (
+-              <div className="pt-6">
+-                <h4 className="text-xs font-bold text-charcoal uppercase tracking-wider mb-3">Your Log History</h4>
+-                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+-                  {cycleLogs.map(log => (
+-                    <div key={log.id} className="flex justify-between items-center bg-white/60 border border-lavender/40 p-3 rounded-xl group">
+-                      <span className="text-sm font-semibold text-charcoal">{new Date(log.start_date).toLocaleDateString(undefined, { timeZone: 'UTC' })}</span>
+-                      <button type="button" onClick={() => handleDeleteLog(log.id)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors cursor-pointer">
+-                        <Trash2 className="w-4 h-4" />
+-                      </button>
+-                    </div>
+-                  ))}
+-                </div>
+-              </div>
+-            )}
+-          </form>
+-        )}
+-      </div>
+-    );
+-  }
+-
+-  // Visual status view
+-  return (
+-    <div className="glass-panel rounded-3xl p-6 border-lavender bg-white/70 space-y-6 animate-fade-in relative overflow-hidden shadow-xl shadow-lavender/10">
+-      <div className={`absolute -right-24 -top-24 w-60 h-60 bg-gradient-to-br ${phaseVisual.bgGradient} rounded-full blur-3xl opacity-80 pointer-events-none`}></div>
+-      <div className={`absolute -left-24 -bottom-24 w-60 h-60 bg-gradient-to-tr ${phaseVisual.bgGradient} rounded-full blur-3xl opacity-80 pointer-events-none`}></div>
+-
+-      <div className="flex items-center justify-between border-b border-lavender/30 pb-3 relative z-10">
+-        <div className="flex items-center space-x-2">
+-          <span className="w-2 h-2 rounded-full bg-butter-dark animate-pulse"></span>
+-          <h3 className="font-dm-sans font-bold text-sm text-charcoal">Cycle Tracker & Insights</h3>
+-        </div>
+-        <button type="button" onClick={() => setIsEditingCycle(true)}
+-          className="p-1.5 rounded-xl text-warm-gray hover:text-charcoal hover:bg-lavender-light transition-all flex items-center gap-1 text-xs font-semibold cursor-pointer border border-lavender/20 bg-white/40">
+-          <Settings className="w-3.5 h-3.5" /><span>Edit</span>
+-        </button>
+-      </div>
+-
+-      {/* SVG Radial Gauge */}
+-      <div className="flex flex-col items-center justify-center py-2 relative z-10">
+-        <div className="relative flex items-center justify-center">
+-          <div className="absolute rounded-full animate-breath transition-all duration-700"
+-            style={{ width: `${radius * 2 - 12}px`, height: `${radius * 2 - 12}px`,
+-              background: `radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 40%, transparent 100%)`,
+-              boxShadow: `0 0 30px 10px ${phaseVisual.dialGlow}` }} />
+-          <svg height={radius * 2} width={radius * 2} className="relative z-10 -rotate-90 select-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
+-            <circle stroke="rgba(0, 0, 0, 0.05)" fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx={radius} cy={radius} />
+-            <circle className={`transition-all duration-1000 ease-out ${phaseVisual.progressStroke}`} fill="transparent" strokeWidth={stroke}
+-              strokeDasharray={`${circumference} ${circumference}`} style={{ strokeDashoffset }} strokeLinecap="round"
+-              r={normalizedRadius} cx={radius} cy={radius} />
+-          </svg>
+-          <div className="absolute inset-0 flex flex-col items-center justify-center z-20 text-center p-4">
+-            <div className="w-7 h-7 rounded-full bg-white/95 border border-lavender/45 flex items-center justify-center shadow-sm text-xs animate-float">
+-              {activePhaseDetails?.moonIcon}
+-            </div>
+-            <span className="text-3xl font-dm-sans font-extrabold text-charcoal tracking-tight mt-1 leading-none">Day {cycleState?.currentDay}</span>
+-            <span className={`text-[10px] font-bold uppercase tracking-wider ${phaseVisual.accentText} mt-1`}>{activePhaseDetails?.title.replace(" Phase", "")}</span>
+-            <span className="text-[9px] font-medium text-warm-gray mt-0.5">{cycleState?.daysUntilNextPeriod} days to next</span>
+-          </div>
+-        </div>
+-      </div>
+-
+-      {/* Hormone Forecast */}
+-      <div className="space-y-3 relative z-10 bg-white/60 p-4 rounded-3xl border border-lavender/35">
+-        <div className="flex items-center justify-between">
+-          <span className="text-[10px] font-bold text-charcoal uppercase tracking-wider flex items-center gap-1">
+-            <Activity className="w-3.5 h-3.5 text-butter-dark" />Hormone & State Forecast
+-          </span>
+-          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${phaseVisual.accentBg} border`}>Pregnancy Chance: {phaseVisual.pregnancyChance}</span>
+-        </div>
+-        <div className="grid grid-cols-2 gap-3 pt-1">
+-          {phaseVisual.insights.map((gauge: any) => (
+-            <div key={gauge.title} className="space-y-1">
+-              <div className="flex justify-between text-[9px] font-bold text-warm-gray">
+-                <span>{gauge.title}</span><span className="text-charcoal">{gauge.value}%</span>
+-              </div>
+-              <div className="w-full h-1.5 bg-lavender-light rounded-full overflow-hidden border border-lavender/20">
+-                <div style={{ width: `${gauge.value}%` }} className={`h-full ${gauge.color} rounded-full transition-all duration-1000`}></div>
+-              </div>
+-            </div>
+-          ))}
+-        </div>
+-      </div>
+-
+-      {/* Anomaly Check-in */}
+-      {isCycleDelayed && (
+-        <div className="bg-red-50/80 border border-red-200 p-4 rounded-3xl relative z-10 space-y-2 animate-fade-in shadow-sm">
+-          <div className="flex items-center gap-2">
+-            <AlertCircle className="w-4 h-4 text-red-500" />
+-            <span className="text-[10px] font-bold text-red-700 uppercase tracking-wider">Mension Check-in</span>
+-          </div>
+-          <p className="text-xs text-charcoal leading-relaxed font-medium">
+-            Hey, I noticed your cycle is a bit delayed this month (Day {cycleState?.currentDay}). Have you been under a lot of stress lately?
+-          </p>
+-          <button onClick={onStartChat} className="w-full mt-2 bg-white hover:bg-red-100 text-red-600 text-xs font-bold py-2 rounded-xl border border-red-200 transition-all shadow-sm cursor-pointer">
+-            Chat with Ova about this
+-          </button>
+-        </div>
+-      )}
+-
+-      {/* Ova Insights */}
+-      <div className="bg-white/80 border border-lavender/50 p-4 rounded-3xl relative z-10 space-y-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+-        <div className="flex items-start space-x-2">
+-          <Heart className="w-4 h-4 text-butter-dark shrink-0 mt-0.5 fill-butter-dark/10" />
+-          <div className="space-y-0.5">
+-            <span className="text-[10px] font-bold text-charcoal uppercase tracking-wider block">Ova Insights</span>
+-            <p className="text-[11px] text-charcoal/80 leading-relaxed font-medium">{phaseVisual.mensionTip}</p>
+-          </div>
+-        </div>
+-      </div>
+-
+-      {/* Symptom Logger */}
+-      <div className="space-y-3 relative z-10">
+-        <div className="flex items-center justify-between">
+-          <span className="text-[10px] font-bold text-charcoal uppercase tracking-wider flex items-center gap-1">
+-            <Check className="w-3.5 h-3.5 text-butter-dark" />How do you feel today?
+-          </span>
+-          <span className="text-[9px] text-warm-gray font-semibold">Saved locally</span>
+-        </div>
+-        <div className="flex flex-wrap gap-2">
+-          {phaseVisual.symptoms.map((symptom: string) => {
+-            const isSelected = selectedSymptoms.includes(symptom);
+-            return (
+-              <button type="button" key={symptom}
+-                onClick={() => setSelectedSymptoms(prev => isSelected ? prev.filter(s => s !== symptom) : [...prev, symptom])}
+-                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+-                  isSelected ? `${phaseVisual.accentBg} shadow-sm scale-102` : "bg-white/50 border-lavender/50 text-warm-gray hover:bg-lavender-light hover:text-charcoal"
+-                }`}>
+-                {isSelected && <Check className="w-3 h-3 shrink-0" />}
+-                <span>{symptom}</span>
+-              </button>
+-            );
+-          })}
+-        </div>
+-      </div>
+-
+-      {/* Predicted Calendar */}
+-      <div className="border-t border-lavender/35 pt-4 relative z-10">
+-        <button type="button" onClick={() => setShowCycleCalendar(!showCycleCalendar)}
+-          className="w-full flex items-center justify-between py-1 text-[10px] font-bold text-charcoal uppercase tracking-wider hover:text-purple-700 transition-all cursor-pointer">
+-          <span>📅 Predicted Cycle Calendar</span><span>{showCycleCalendar ? "Hide" : "Show"}</span>
+-        </button>
+-        {showCycleCalendar && (
+-          <div className="mt-3 space-y-3 animate-fade-in">
+-            {renderCalendar(false)}
+-            <div className="flex flex-wrap gap-3 justify-center text-[8px] font-bold text-warm-gray uppercase tracking-wider">
+-              <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-butter border border-lavender-dark/50"></span><span>Start Date</span></div>
+-              <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-lavender border border-lavender-dark/30"></span><span>Bleed Days</span></div>
+-              <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full border border-dashed border-butter-dark bg-butter-light/50"></span><span>Ovulation Window</span></div>
+-            </div>
+-          </div>
+-        )}
+-      </div>
+-    </div>
+-  );
+-}
+diff --git a/src/components/dashboard/MessageAnalyzer.tsx b/src/components/dashboard/MessageAnalyzer.tsx
+deleted file mode 100644
+index fb0c00b..0000000
+--- a/src/components/dashboard/MessageAnalyzer.tsx
++++ /dev/null
+@@ -1,194 +0,0 @@
+-"use client";
+-
+-import React, { useState } from "react";
+-import { Activity, ShieldCheck, Flower, AlertCircle } from "lucide-react";
+-
+-interface MessageAnalyzerProps {
+-  cyclePhase: string;
+-  cycleDay: number | null;
+-  cyclePhaseName: string | null;
+-  session?: any;
+-  onSave: (analysis: { message: string; phase: string; result: string; sender_label: string }) => void;
+-  onToxicDetected: () => void;
+-}
+-
+-export default function MessageAnalyzer({ cyclePhase, cycleDay, cyclePhaseName, session, onSave, onToxicDetected }: MessageAnalyzerProps) {
+-  const [messageText, setMessageText] = useState("");
+-  const [senderLabel, setSenderLabel] = useState("");
+-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+-  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+-  const [isCurrentMessageToxic, setIsCurrentMessageToxic] = useState(false);
+-  const [error, setError] = useState("");
+-
+-  const handleAnalyze = (e: React.FormEvent) => {
+-    e.preventDefault();
+-    if (!messageText.trim()) { setError("Please paste the message you received first."); return; }
+-    if (!senderLabel.trim()) { setError("Please provide a sender label (e.g. boyfriend, boss, roommate)."); return; }
+-
+-    setError("");
+-    setIsAnalyzing(true);
+-    setAnalysisResult(null);
+-
+-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+-    if (session?.access_token) {
+-      headers["Authorization"] = `Bearer ${session.access_token}`;
+-    }
+-
+-    fetch("/api/analyze", {
+-      method: "POST",
+-      headers,
+-      body: JSON.stringify({ text: messageText.trim(), cycle_phase: cyclePhase })
+-    })
+-      .then(async (res) => {
+-        if (!res.ok) {
+-          const errData = await res.json().catch(() => ({}));
+-          throw new Error(errData.error || "Server analysis failed");
+-        }
+-        return res.json();
+-      })
+-      .then((data) => {
+-        setAnalysisResult(data.response);
+-        setIsCurrentMessageToxic(!!data.isToxic);
+-        setIsAnalyzing(false);
+-      })
+-      .catch((err: any) => {
+-        console.error("API Error:", err);
+-        setError("Something went wrong — try again in a moment 💜");
+-        setIsAnalyzing(false);
+-      });
+-  };
+-
+-  const handleSave = () => {
+-    if (!analysisResult) return;
+-    onSave({
+-      message: messageText,
+-      phase: cyclePhase,
+-      result: analysisResult,
+-      sender_label: senderLabel.trim().toLowerCase(),
+-    });
+-    setMessageText("");
+-    setSenderLabel("");
+-    setAnalysisResult(null);
+-    setIsCurrentMessageToxic(false);
+-  };
+-
+-  const handleClear = () => {
+-    setMessageText("");
+-    setSenderLabel("");
+-    setAnalysisResult(null);
+-    setIsCurrentMessageToxic(false);
+-  };
+-
+-  const renderText = (text: string) => {
+-    return text.split("\n\n").map((paragraph, index) => {
+-      if (paragraph.startsWith("###")) {
+-        return <h4 key={index} className="font-dm-sans font-bold text-base text-charcoal pt-2">{paragraph.replace("### ", "")}</h4>;
+-      }
+-      if (paragraph.startsWith("####")) {
+-        return <h5 key={index} className="font-dm-sans font-bold text-sm text-charcoal/90 uppercase tracking-wide pt-1">{paragraph.replace("#### ", "")}</h5>;
+-      }
+-      return <p key={index} className="text-charcoal/85">{paragraph}</p>;
+-    });
+-  };
+-
+-  return (
+-    <div className="glass-panel rounded-3xl p-6 border-lavender bg-white/60 space-y-6">
+-      <form onSubmit={handleAnalyze} className="space-y-5">
+-        <div className="space-y-2">
+-          <label htmlFor="message-pasted" className="block text-[10px] font-bold text-charcoal uppercase tracking-wider">
+-            1) Paste the message that made you feel weird:
+-          </label>
+-          <textarea id="message-pasted" rows={4} value={messageText}
+-            onChange={(e) => { setMessageText(e.target.value); if (error) setError(""); }}
+-            placeholder="Examples: 'If you actually cared about us, you wouldn't go out tonight'..."
+-            className="w-full rounded-3xl border border-lavender p-4 text-sm focus:outline-none focus:ring-2 focus:ring-lavender-dark focus:border-transparent bg-white/70 text-charcoal placeholder-warm-gray/40 font-normal leading-relaxed"
+-            disabled={isAnalyzing} />
+-        </div>
+-
+-        <div className="space-y-2">
+-          <label htmlFor="sender-label" className="block text-[10px] font-bold text-charcoal uppercase tracking-wider">
+-            2) Who sent this message? (e.g. boyfriend, boss, ex — no real names):
+-          </label>
+-          <input id="sender-label" type="text" value={senderLabel}
+-            onChange={(e) => { setSenderLabel(e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, "")); if (error) setError(""); }}
+-            placeholder="e.g. boyfriend, boss, ex, sister"
+-            className="w-full rounded-3xl border border-lavender p-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-lavender-dark focus:border-transparent bg-white/70 text-charcoal placeholder-warm-gray/45 font-semibold"
+-            disabled={isAnalyzing} />
+-        </div>
+-
+-        {error && (
+-          <p className="text-xs text-red-500 font-bold flex items-center gap-1.5 mt-2">
+-            <AlertCircle className="w-4 h-4 text-red-500 animate-pulse" />{error}
+-          </p>
+-        )}
+-
+-        {!isAnalyzing && !analysisResult && (
+-          <div className="space-y-3">
+-            <button type="submit"
+-              className="w-full bg-butter hover:bg-butter-dark text-charcoal border border-butter-dark/50 font-bold py-3.5 rounded-3xl transition-all-300 shadow-md flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 cursor-pointer">
+-              <Activity className="w-4.5 h-4.5 text-charcoal" /><span>Analyze Message & Sensitivity</span>
+-            </button>
+-            <p className="text-[10px] text-center text-warm-gray font-semibold">
+-              Ova will analyze this message factoring in your current <strong>{cyclePhaseName || cyclePhase}</strong>.
+-            </p>
+-          </div>
+-        )}
+-      </form>
+-
+-      {/* Loading State */}
+-      {isAnalyzing && (
+-        <div className="py-12 flex flex-col items-center justify-center space-y-4 animate-pulse-slow">
+-          <div className="relative w-16 h-16 flex items-center justify-center">
+-            <Flower className="w-12 h-12 text-emerald-400 animate-bounce" />
+-            <div className="absolute inset-0 border-4 border-t-lavender-dark border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+-          </div>
+-          <div className="text-center">
+-            <p className="text-sm font-semibold text-charcoal font-dm-sans">Ova is reading between the lines...</p>
+-            <p className="text-xs text-warm-gray mt-1 font-medium">Factoring in your cycle day {cycleDay} ({cyclePhase} phase)...</p>
+-          </div>
+-        </div>
+-      )}
+-
+-      {/* Analysis Result */}
+-      {analysisResult && (
+-        <div className="animate-fade-in border border-lavender/80 bg-white rounded-3xl p-6 space-y-5 shadow-md shadow-lavender/10 relative overflow-hidden">
+-          <div className="absolute -right-8 -top-8 w-24 h-24 bg-butter/25 rounded-full blur-xl"></div>
+-          <div className="absolute -left-8 -bottom-8 w-24 h-24 bg-lavender/25 rounded-full blur-xl"></div>
+-
+-          <div className="flex items-center justify-between border-b border-lavender/40 pb-3">
+-            <div className="flex items-center gap-2">
+-              <span className="text-base">📝</span>
+-              <span className="text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-100 uppercase tracking-wide">Ova's Analysis</span>
+-            </div>
+-            <span className="text-[10px] text-warm-gray font-bold uppercase tracking-wider bg-lavender-light border border-lavender/50 px-2.5 py-0.5 rounded-full">
+-              From: {senderLabel} • Day {cycleDay}
+-            </span>
+-          </div>
+-
+-          <div className="text-sm text-charcoal/90 leading-relaxed space-y-4 font-normal whitespace-pre-wrap">
+-            {renderText(analysisResult)}
+-          </div>
+-
+-          <div className="flex flex-col gap-3 pt-2">
+-            <div className="flex gap-3">
+-              <button onClick={handleSave}
+-                className="flex-1 bg-butter hover:bg-butter-dark text-charcoal border border-butter-dark/50 font-bold py-2.5 rounded-2xl transition-all-300 text-xs flex items-center justify-center gap-2 hover:scale-102 shadow-sm cursor-pointer">
+-                <ShieldCheck className="w-4 h-4 text-charcoal" /><span>Save to Reflection Log</span>
+-              </button>
+-              <button onClick={handleClear}
+-                className="px-4 py-2.5 border border-lavender/80 bg-white hover:bg-lavender-light/35 rounded-2xl text-xs font-bold text-warm-gray hover:text-charcoal transition-all-300 cursor-pointer">
+-                Clear
+-              </button>
+-            </div>
+-            {isCurrentMessageToxic && (
+-              <button onClick={onToxicDetected}
+-                className="w-full mt-2 py-3 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold rounded-2xl transition-all shadow-sm text-sm">
+-                Need help getting out? 💜
+-              </button>
+-            )}
+-          </div>
+-        </div>
+-      )}
+-    </div>
+-  );
+-}
+diff --git a/src/components/dashboard/PatternMemory.tsx b/src/components/dashboard/PatternMemory.tsx
+deleted file mode 100644
+index f25a37d..0000000
+--- a/src/components/dashboard/PatternMemory.tsx
++++ /dev/null
+@@ -1,122 +0,0 @@
+-"use client";
+-
+-import React, { useState } from "react";
+-import { Sparkles, Eye, RefreshCw } from "lucide-react";
+-import type { SavedAnalysis } from "./types";
+-
+-interface PatternMemoryProps {
+-  savedAnalyses: SavedAnalysis[];
+-  session?: any;
+-}
+-
+-export default function PatternMemory({ savedAnalyses, session }: PatternMemoryProps) {
+-  const [patternSummaries, setPatternSummaries] = useState<Record<string, string>>({});
+-  const [loadingPatterns, setLoadingPatterns] = useState<Record<string, boolean>>({});
+-
+-  // Group by sender label
+-  const senderGroups = savedAnalyses.reduce((groups: Record<string, SavedAnalysis[]>, item) => {
+-    const sender = (item.sender_label || "unknown").trim().toLowerCase();
+-    if (!groups[sender]) groups[sender] = [];
+-    groups[sender].push(item);
+-    return groups;
+-  }, {});
+-
+-  const patternSenders = Object.keys(senderGroups).filter(sender => senderGroups[sender].length >= 5);
+-
+-  const handleRevealPatterns = (sender: string) => {
+-    const group = senderGroups[sender];
+-    const msgs = group.map(i => i.message);
+-    const results = group.map(i => i.result);
+-
+-    setLoadingPatterns(prev => ({ ...prev, [sender]: true }));
+-
+-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+-    if (session?.access_token) {
+-      headers["Authorization"] = `Bearer ${session.access_token}`;
+-    }
+-
+-    fetch("/api/patterns", {
+-      method: "POST",
+-      headers,
+-      body: JSON.stringify({ sender_label: sender, messages: msgs, results })
+-    })
+-      .then(async (res) => {
+-        if (!res.ok) {
+-          const errData = await res.json().catch(() => ({}));
+-          throw new Error(errData.error || "Server pattern synthesis failed");
+-        }
+-        return res.json();
+-      })
+-      .then((data) => {
+-        setPatternSummaries(prev => ({ ...prev, [sender]: data.response }));
+-        setLoadingPatterns(prev => ({ ...prev, [sender]: false }));
+-      })
+-      .catch((err: any) => {
+-        console.error("API Patterns Error:", err);
+-        setPatternSummaries(prev => ({ ...prev, [sender]: "Something went wrong — try again in a moment 💜" }));
+-        setLoadingPatterns(prev => ({ ...prev, [sender]: false }));
+-      });
+-  };
+-
+-  if (patternSenders.length === 0) {
+-    return (
+-      <section className="space-y-4">
+-        <div className="flex items-center space-x-2">
+-          <Sparkles className="w-5 h-5 text-amber-500 animate-float" />
+-          <h3 className="font-dm-sans font-bold text-base text-charcoal">Pattern Memory</h3>
+-        </div>
+-        <div className="glass-panel rounded-3xl p-5 text-center border-lavender bg-white/40 text-[11px] text-warm-gray leading-normal font-medium animate-fade-in">
+-          🌻 Ova's tip: Analyze 5+ messages from the same sender label (like "boyfriend" or "boss") to unlock pattern recognition over time.
+-        </div>
+-      </section>
+-    );
+-  }
+-
+-  return (
+-    <section className="space-y-4">
+-      <div className="flex items-center space-x-2">
+-        <Sparkles className="w-5 h-5 text-amber-500 animate-float" />
+-        <h3 className="font-dm-sans font-bold text-base text-charcoal">Pattern Memory</h3>
+-      </div>
+-
+-      <div className="space-y-4">
+-        {patternSenders.map(sender => {
+-          const count = senderGroups[sender].length;
+-          const patternText = patternSummaries[sender];
+-          const isLoading = !!loadingPatterns[sender];
+-
+-          return (
+-            <div key={sender} className="glass-panel-yellow rounded-3xl p-5 border-butter space-y-3 animate-bloom">
+-              <h4 className="font-dm-sans font-bold text-xs text-charcoal/90 flex items-center gap-1.5 uppercase tracking-wide">
+-                <span>🛡️</span><span>Pattern Card: {sender}</span>
+-              </h4>
+-              <p className="text-xs text-charcoal/80 leading-normal">
+-                You've shared {count} messages from <strong>{sender}</strong>. Here's what we've noticed over time:
+-              </p>
+-
+-              {patternText ? (
+-                <div className="text-xs text-charcoal/95 leading-relaxed bg-white/80 p-3.5 rounded-2xl border border-butter-dark/50 whitespace-pre-wrap font-medium">
+-                  {patternText.split("\n\n").map((p, idx) => {
+-                    const cleanText = p.replace(/^You've shared.*?Here's what we've noticed over time:\s*/i, "");
+-                    if (!cleanText) return null;
+-                    return <p key={idx} className="mb-2 last:mb-0">{cleanText}</p>;
+-                  })}
+-                </div>
+-              ) : isLoading ? (
+-                <div className="py-4 flex flex-col items-center justify-center space-y-2">
+-                  <RefreshCw className="w-5 h-5 text-amber-500 animate-spin" />
+-                  <span className="text-[10px] text-warm-gray font-semibold">Synthesizing behavioral trends...</span>
+-                </div>
+-              ) : (
+-                <button onClick={() => handleRevealPatterns(sender)}
+-                  className="w-full flex items-center justify-center space-x-2 py-2.5 bg-white hover:bg-butter-light border border-butter-dark/60 rounded-2xl text-[10px] font-bold text-charcoal transition-all-300 hover:scale-101 cursor-pointer">
+-                  <Eye className="w-3.5 h-3.5" /><span>Reveal Behavioral Analysis</span>
+-                </button>
+-              )}
+-            </div>
+-          );
+-        })}
+-      </div>
+-    </section>
+-  );
+-}
+diff --git a/src/components/dashboard/ReflectionHistory.tsx b/src/components/dashboard/ReflectionHistory.tsx
+deleted file mode 100644
+index cd6896c..0000000
+--- a/src/components/dashboard/ReflectionHistory.tsx
++++ /dev/null
+@@ -1,68 +0,0 @@
+-"use client";
+-
+-import React from "react";
+-import { FileText, Trash2, ArrowRight } from "lucide-react";
+-import type { SavedAnalysis } from "./types";
+-
+-interface ReflectionHistoryProps {
+-  analyses: SavedAnalysis[];
+-  onDelete: (id: string | number) => void;
+-  onView: (analysis: SavedAnalysis) => void;
+-}
+-
+-export default function ReflectionHistory({ analyses, onDelete, onView }: ReflectionHistoryProps) {
+-  if (analyses.length === 0) {
+-    return (
+-      <section className="space-y-4">
+-        <div className="flex items-center space-x-2">
+-          <FileText className="w-5 h-5 text-purple-400" />
+-          <h3 className="font-dm-sans font-bold text-base text-charcoal">Reflection History</h3>
+-        </div>
+-        <div className="glass-panel rounded-3xl p-6 text-center border-dashed border-lavender/50 bg-white/30 text-xs text-warm-gray">
+-          No logs saved yet. After running an analysis, click "Save to Reflection Log".
+-        </div>
+-      </section>
+-    );
+-  }
+-
+-  return (
+-    <section className="space-y-4">
+-      <div className="flex items-center space-x-2">
+-        <FileText className="w-5 h-5 text-purple-400" />
+-        <h3 className="font-dm-sans font-bold text-base text-charcoal">Reflection History</h3>
+-      </div>
+-
+-      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+-        {analyses.map(item => (
+-          <div key={item.id} className="glass-panel rounded-3xl p-4 border-lavender/40 bg-white/90 shadow-sm relative group hover:border-lavender transition-all-300">
+-            <div className="flex justify-between items-start gap-4 mb-2">
+-              <div className="flex items-center gap-1.5">
+-                <span className="text-[9px] uppercase font-bold tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
+-                  {item.phase} Phase
+-                </span>
+-                {item.sender_label && (
+-                  <span className="text-[9px] uppercase font-bold tracking-wider text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-butter-dark/50">
+-                    {item.sender_label}
+-                  </span>
+-                )}
+-              </div>
+-              <button onClick={() => onDelete(item.id)}
+-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-600 transition-all duration-200 self-start cursor-pointer"
+-                title="Delete reflection">
+-                <Trash2 className="w-3.5 h-3.5" />
+-              </button>
+-            </div>
+-            <div className="space-y-3">
+-              <p className="text-xs text-charcoal/80 italic">"{item.message.substring(0, 100)}{item.message.length > 100 ? "..." : ""}"</p>
+-              <button onClick={() => onView(item)}
+-                className="w-full flex items-center justify-between p-2 rounded-2xl bg-lavender-light/35 border border-lavender/30 text-[10px] font-bold text-charcoal hover:bg-lavender transition-all-300 cursor-pointer">
+-                <span>Review Full Analysis</span>
+-                <ArrowRight className="w-3 h-3" />
+-              </button>
+-            </div>
+-          </div>
+-        ))}
+-      </div>
+-    </section>
+-  );
+-}
+diff --git a/src/components/dashboard/SafeExitGuide.tsx b/src/components/dashboard/SafeExitGuide.tsx
+deleted file mode 100644
+index 388c42c..0000000
+--- a/src/components/dashboard/SafeExitGuide.tsx
++++ /dev/null
+@@ -1,121 +0,0 @@
+-"use client";
+-
+-import React from "react";
+-import { ShieldCheck } from "lucide-react";
+-
+-interface SafeExitGuideProps {
+-  isOpen: boolean;
+-  onClose: () => void;
+-}
+-
+-export default function SafeExitGuide({ isOpen, onClose }: SafeExitGuideProps) {
+-  if (!isOpen) return null;
+-
+-  return (
+-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/50 backdrop-blur-md animate-fade-in">
+-      <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-red-100 relative">
+-        <button
+-          onClick={onClose}
+-          className="absolute top-5 right-5 p-2 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500 transition-colors cursor-pointer"
+-        >
+-          ✕
+-        </button>
+-
+-        <div className="flex items-center gap-2 mb-6">
+-          <ShieldCheck className="w-6 h-6 text-purple-600" />
+-          <h3 className="font-dm-sans font-bold text-2xl text-charcoal">Safe Exit Guide</h3>
+-        </div>
+-
+-        <p className="text-sm text-charcoal/80 mb-8 leading-relaxed">
+-          If you're feeling unsafe or realizing it's time to leave, you don't have to do it alone. Here are practical, step-by-step actions you can take to protect yourself. Take what you need, at your own pace.
+-        </p>
+-
+-        <div className="space-y-6">
+-          {/* Step 1 */}
+-          <div className="bg-purple-50/50 border border-purple-100 p-5 rounded-2xl">
+-            <h4 className="font-bold text-purple-900 mb-2 flex items-center gap-2">
+-              <span className="bg-purple-200 text-purple-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+-              Document Evidence Safely
+-            </h4>
+-            <p className="text-sm text-charcoal/80 leading-relaxed">
+-              Take screenshots of manipulative or threatening messages. Email them to a secure, hidden account or send them to a trusted friend. Delete the evidence from your phone if you suspect your device is being monitored.
+-            </p>
+-          </div>
+-
+-          {/* Step 2 */}
+-          <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-2xl">
+-            <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+-              <span className="bg-blue-200 text-blue-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+-              Tell a Trusted Person
+-            </h4>
+-            <p className="text-sm text-charcoal/80 leading-relaxed">
+-              Abuse thrives in isolation. Pick one trusted person—a friend, sister, colleague, or professional—and tell them the truth about what is happening. Establishing a code word for emergencies can be life-saving.
+-            </p>
+-          </div>
+-
+-          {/* Step 3 */}
+-          <div className="bg-green-50/50 border border-green-100 p-5 rounded-2xl">
+-            <h4 className="font-bold text-green-900 mb-2 flex items-center gap-2">
+-              <span className="bg-green-200 text-green-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
+-              Financial Independence
+-            </h4>
+-            <p className="text-sm text-charcoal/80 leading-relaxed">
+-              Start setting aside emergency cash or open a secret bank account if you can safely do so. Gather essential documents (passports, Aadhar card, banking details, property papers) and keep them in a safe location outside your home.
+-            </p>
+-          </div>
+-
+-          {/* Step 4 */}
+-          <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
+-            <h4 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
+-              <span className="bg-amber-200 text-amber-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span>
+-              Safety Planning
+-            </h4>
+-            <p className="text-sm text-charcoal/80 leading-relaxed">
+-              Identify the safest rooms in your house (avoid kitchens or rooms with weapons). Plan an escape route. Turn off location sharing on your phone and social media apps. If you fear immediate violence, do not confront them; leave when they are not home.
+-            </p>
+-          </div>
+-
+-          {/* Step 5 */}
+-          <div className="bg-red-50/50 border border-red-100 p-5 rounded-2xl">
+-            <h4 className="font-bold text-red-900 mb-3 flex items-center gap-2">
+-              <span className="bg-red-200 text-red-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">5</span>
+-              Professional Help (India)
+-            </h4>
+-            <div className="space-y-3">
+-              <div className="bg-white p-3 rounded-xl border border-red-100 shadow-sm flex items-center justify-between">
+-                <div>
+-                  <span className="font-bold text-charcoal block text-sm">National Commission for Women</span>
+-                  <span className="text-xs text-warm-gray">24/7 Helpline for women in distress</span>
+-                </div>
+-                <a href="tel:7827170170" className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200">7827170170</a>
+-              </div>
+-              <div className="bg-white p-3 rounded-xl border border-red-100 shadow-sm flex items-center justify-between">
+-                <div>
+-                  <span className="font-bold text-charcoal block text-sm">iCall Helpline</span>
+-                  <span className="text-xs text-warm-gray">Psychosocial counseling (Mon-Sat)</span>
+-                </div>
+-                <a href="tel:9152987821" className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200">9152987821</a>
+-              </div>
+-              <div className="bg-white p-3 rounded-xl border border-red-100 shadow-sm flex items-center justify-between">
+-                <div>
+-                  <span className="font-bold text-charcoal block text-sm">Vandrevala Foundation</span>
+-                  <span className="text-xs text-warm-gray">24/7 Mental health crisis support</span>
+-                </div>
+-                <a href="tel:9999666555" className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200">9999 666 555</a>
+-              </div>
+-            </div>
+-          </div>
+-        </div>
+-
+-        <div className="mt-8 pt-4 border-t border-lavender/30 flex justify-end">
+-          <button
+-            onClick={onClose}
+-            className="px-6 py-2.5 bg-lavender-light hover:bg-lavender text-charcoal font-bold rounded-2xl transition-all shadow-sm cursor-pointer"
+-          >
+-            Close Guide
+-          </button>
+-        </div>
+-      </div>
+-    </div>
+-  );
+-}
+diff --git a/src/components/dashboard/types.ts b/src/components/dashboard/types.ts
+deleted file mode 100644
+index deffecf..0000000
+--- a/src/components/dashboard/types.ts
++++ /dev/null
+@@ -1,20 +0,0 @@
+-export interface SavedAnalysis {
+-  id: string | number;
+-  message: string;
+-  phase: string;
+-  result: string;
+-  timestamp: string;
+-  sender_label?: string;
+-}
+-
+-export interface CycleData {
+-  lmp: string;
+-  cycleLength: number;
+-  periodDuration: number;
+-}
+-
+-export interface CycleLog {
+-  id: string;
+-  start_date: string;
+-  notes?: string;
+-}
+
+commit 95d6f735aa2dbf61da2862fa832de65884b39ce0
+Author: Abbas3kay <muhdabbas2201@gmail.com>
+Date:   Wed Jun 24 02:10:16 2026 +0530
+
+    feat: add dashboard components, shared components, context, utils, and supabase config
+    
+    - Add new dashboard and shared components
+    - Add context providers
+    - Add apiAuth, phaseContexts, and storageHelper utils
+    - Add supabase configuration
+    - Update API routes, layout, and existing components
+    - Update package dependencies
+    
+    Co-Authored-By: Claude <noreply@anthropic.com>
+
+diff --git a/src/components/dashboard/AnalysisReviewModal.tsx b/src/components/dashboard/AnalysisReviewModal.tsx
+new file mode 100644
+index 0000000..66bac9a
+--- /dev/null
++++ b/src/components/dashboard/AnalysisReviewModal.tsx
+@@ -0,0 +1,72 @@
++"use client";
++
++import React from "react";
++import type { SavedAnalysis } from "./types";
++
++interface AnalysisReviewModalProps {
++  analysis: SavedAnalysis | null;
++  onClose: () => void;
++}
++
++export default function AnalysisReviewModal({ analysis, onClose }: AnalysisReviewModalProps) {
++  if (!analysis) return null;
++
++  return (
++    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/40 backdrop-blur-sm animate-fade-in">
++      <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-lavender/50 relative">
++        <button
++          onClick={onClose}
++          className="absolute top-5 right-5 p-2 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500 transition-colors cursor-pointer"
++        >
++          ✕
++        </button>
++
++        <div className="flex items-center gap-2 mb-6">
++          <span className="text-xl">📝</span>
++          <h3 className="font-dm-sans font-bold text-xl text-charcoal">Analysis Review</h3>
++        </div>
++
++        <div className="space-y-6">
++          <div className="bg-lavender-light/30 border border-lavender/40 rounded-2xl p-4 space-y-2">
++            <div className="flex items-center gap-2">
++              <span className="text-[10px] text-warm-gray font-bold uppercase tracking-wider">Context</span>
++              <span className="text-[9px] uppercase font-bold tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
++                {analysis.phase} Phase
++              </span>
++              {analysis.sender_label && (
++                <span className="text-[9px] uppercase font-bold tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-butter-dark/50">
++                  From: {analysis.sender_label}
++                </span>
++              )}
++            </div>
++            <p className="text-sm text-charcoal/80 italic border-l-2 border-lavender-dark pl-3 py-1">&ldquo;{analysis.message}&rdquo;</p>
++          </div>
++
++          <div className="space-y-4">
++            <h4 className="text-xs font-bold text-charcoal uppercase tracking-wider">Ova&apos;s Insight</h4>
++            <div className="text-sm text-charcoal/90 leading-relaxed space-y-3 whitespace-pre-wrap">
++              {analysis.result.split("\n\n").map((paragraph: string, index: number) => {
++                if (paragraph.startsWith("###")) {
++                  return <h5 key={index} className="font-dm-sans font-bold text-base text-charcoal pt-2">{paragraph.replace("### ", "")}</h5>;
++                }
++                if (paragraph.startsWith("####")) {
++                  return <h6 key={index} className="font-dm-sans font-bold text-sm text-charcoal/90 uppercase tracking-wide pt-1">{paragraph.replace("#### ", "")}</h6>;
++                }
++                return <p key={index} className="text-charcoal/95 font-medium">{paragraph}</p>;
++              })}
++            </div>
++          </div>
++        </div>
++
++        <div className="mt-8 pt-4 border-t border-lavender/30 flex justify-end">
++          <button
++            onClick={onClose}
++            className="px-6 py-2.5 bg-butter hover:bg-butter-dark text-charcoal font-bold rounded-2xl transition-all shadow-sm cursor-pointer"
++          >
++            Close Review
++          </button>
++        </div>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/components/dashboard/CycleTracker.tsx b/src/components/dashboard/CycleTracker.tsx
+new file mode 100644
+index 0000000..274f659
+--- /dev/null
++++ b/src/components/dashboard/CycleTracker.tsx
+@@ -0,0 +1,495 @@
++"use client";
++
++import React, { useState, useEffect, useCallback } from "react";
++import { Calendar, Settings, Activity, Check, Heart, AlertCircle, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
++import { supabase } from "@/utils/supabaseClient";
++import { calculateCycleState } from "@/utils/cycleHelpers";
++import { getItem, setItem, KEYS } from "@/utils/storageHelper";
++import type { CycleData, CycleLog } from "./types";
++
++interface CycleTrackerProps {
++  session?: any;
++  cycleData: CycleData | null;
++  cycleLogs: CycleLog[];
++  onCycleDataChange: (data: CycleData) => void;
++  onCycleLogsChange: (logs: CycleLog[]) => void;
++  onStartChat: () => void;
++  onLoginClick: () => void;
++}
++
++const phaseDetails: Record<string, { title: string; tagline: string; description: string; moonIcon: React.ReactNode }> = {
++  menstrual: {
++    title: "Menstrual Phase", tagline: "Bleeding ☁️",
++    description: "Progesterone & estrogen are low. Energy is resting, intuition is high.",
++    moonIcon: <svg className="w-5 h-5 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /></svg>
++  },
++  follicular: {
++    title: "Follicular Phase", tagline: "Post-Period 🌱",
++    description: "Estrogen is rising. Energy, optimism, and mental focus are increasing.",
++    moonIcon: <svg className="w-5 h-5 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 1 0 18V3z" fill="currentColor" className="text-butter-dark" /></svg>
++  },
++  ovulation: {
++    title: "Ovulation Phase", tagline: "Fertile Window ☀️",
++    description: "Estrogen peaks. You feel highly social, confident, and communicative.",
++    moonIcon: <svg className="w-5 h-5 text-butter-dark shrink-0 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="9" fill="currentColor" /><circle cx="12" cy="12" r="9" className="text-butter animate-ping absolute opacity-25" /></svg>
++  },
++  luteal: {
++    title: "Luteal Phase", tagline: "Pre-Period ⛈️",
++    description: "Progesterone climbs then drops. Anxiety, irritability, and sensitivity peak.",
++    moonIcon: <svg className="w-5 h-5 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 0 0 18V3z" fill="currentColor" className="text-butter-dark" /></svg>
++  }
++};
++
++const phaseVisuals: Record<string, any> = {
++  menstrual: {
++    color: "lavender", bgGradient: "from-lavender/40 via-lavender-light/10 to-transparent",
++    dialGlow: "rgba(188, 170, 240, 0.25)", accentText: "text-purple-600",
++    accentBg: "bg-lavender text-purple-700 border-lavender-dark/50",
++    progressStroke: "stroke-purple-300",
++    insights: [
++      { title: "Estrogen", value: 15, color: "bg-lavender-dark" },
++      { title: "Progesterone", value: 10, color: "bg-lavender" },
++      { title: "Energy", value: 30, color: "bg-lavender-dark" },
++      { title: "Sensitivity", value: 85, color: "bg-purple-400" }
++    ],
++    pregnancyChance: "Very Low",
++    symptoms: ["Cramps", "Fatigue", "Backache", "Heavy Flow", "Nesting", "Cozy Vibes"],
++    mensionTip: "Your energy is turning inward. Cancel non-essential plans and let yourself rest."
++  },
++  follicular: {
++    color: "butter", bgGradient: "from-butter/30 via-butter-light/10 to-transparent",
++    dialGlow: "rgba(252, 226, 119, 0.2)", accentText: "text-amber-700",
++    accentBg: "bg-butter-light text-amber-800 border-butter-dark/50",
++    progressStroke: "stroke-butter-dark",
++    insights: [
++      { title: "Estrogen", value: 65, color: "bg-butter-dark" },
++      { title: "Progesterone", value: 15, color: "bg-butter" },
++      { title: "Energy", value: 75, color: "bg-butter-dark" },
++      { title: "Sensitivity", value: 40, color: "bg-lavender-dark" }
++    ],
++    pregnancyChance: "Medium",
++    symptoms: ["High Energy", "Clear Skin", "Focused", "Happy", "Productive", "Light discharge"],
++    mensionTip: "Estrogen is rising, fueling optimism and resilience."
++  },
++  ovulation: {
++    color: "butter-lavender", bgGradient: "from-butter/45 via-lavender-light/20 to-transparent",
++    dialGlow: "rgba(252, 226, 119, 0.3)", accentText: "text-amber-850",
++    accentBg: "bg-butter border-butter-dark text-amber-900",
++    progressStroke: "stroke-butter-dark",
++    insights: [
++      { title: "Estrogen", value: 95, color: "bg-butter-dark" },
++      { title: "Progesterone", value: 45, color: "bg-butter" },
++      { title: "Energy", value: 95, color: "bg-butter-dark" },
++      { title: "Sensitivity", value: 50, color: "bg-lavender" }
++    ],
++    pregnancyChance: "High (Fertile)",
++    symptoms: ["Social Energy", "Bloating", "High Libido", "Bright Eyes", "Optimistic", "Mild Cramps"],
++    mensionTip: "Estrogen and testosterone peak today, making you magnetic and highly communicative."
++  },
++  luteal: {
++    color: "lavender-butter", bgGradient: "from-lavender/50 via-butter-light/15 to-transparent",
++    dialGlow: "rgba(188, 170, 240, 0.3)", accentText: "text-purple-600",
++    accentBg: "bg-lavender text-purple-700 border-lavender-dark/60",
++    progressStroke: "stroke-purple-400",
++    insights: [
++      { title: "Estrogen", value: 45, color: "bg-lavender" },
++      { title: "Progesterone", value: 80, color: "bg-purple-400" },
++      { title: "Energy", value: 50, color: "bg-butter-dark" },
++      { title: "Sensitivity", value: 95, color: "bg-purple-500" }
++    ],
++    pregnancyChance: "Low",
++    symptoms: ["Cravings", "Anxiety", "Mood Swings", "Tender Breasts", "Bloating", "Restlessness"],
++    mensionTip: "Progesterone drops sharply, triggering emotional sensitivity and threat detection."
++  }
++};
++
++export default function CycleTracker({ session, cycleData, cycleLogs, onCycleDataChange, onCycleLogsChange, onStartChat, onLoginClick }: CycleTrackerProps) {
++  const [isEditingCycle, setIsEditingCycle] = useState(false);
++  const [lmpInput, setLmpInput] = useState(cycleData?.lmp || "");
++  const [lengthInput, setLengthInput] = useState(String(cycleData?.cycleLength || 28));
++  const [durationInput, setDurationInput] = useState(String(cycleData?.periodDuration || 5));
++  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
++  const [showCycleCalendar, setShowCycleCalendar] = useState(false);
++  const [calendarMonth, setCalendarMonth] = useState(() => cycleData?.lmp ? new Date(cycleData.lmp) : new Date());
++  const [isCycleDelayed, setIsCycleDelayed] = useState(false);
++
++  // Load symptoms
++  useEffect(() => {
++    const saved = getItem(KEYS.LOGGED_SYMPTOMS);
++    if (saved) {
++      try { setSelectedSymptoms(JSON.parse(saved)); } catch {}
++    }
++  }, []);
++
++  // Persist symptoms
++  useEffect(() => {
++    setItem(KEYS.LOGGED_SYMPTOMS, JSON.stringify(selectedSymptoms));
++  }, [selectedSymptoms]);
++
++  // Compute cycle state
++  const cycleState = cycleData ? calculateCycleState(cycleData.lmp, cycleData.cycleLength, cycleData.periodDuration) : null;
++  const currentPhase = cycleState ? cycleState.phase : "general";
++
++  // Ensure phase matches one of our keys
++  const phaseKey = (cycleState && ["menstrual", "follicular", "ovulation", "luteal"].includes(cycleState.phase))
++    ? cycleState.phase as "menstrual" | "follicular" | "ovulation" | "luteal"
++    : "follicular";
++  const phaseVisual = phaseVisuals[phaseKey];
++  const activePhaseDetails = phaseDetails[phaseKey];
++
++  // SVG dial math
++  const radius = 80, stroke = 6;
++  const normalizedRadius = radius - stroke * 2;
++  const circumference = normalizedRadius * 2 * Math.PI;
++  const strokeDashoffset = cycleState && cycleData
++    ? circumference - (cycleState.currentDay / cycleData.cycleLength) * circumference
++    : circumference;
++
++  // Anomaly detection
++  useEffect(() => {
++    if (cycleState && cycleData) {
++      setIsCycleDelayed(cycleState.currentDay > cycleData.cycleLength + 3);
++    }
++  }, [cycleState, cycleData]);
++
++  // Expose phase
++  useEffect(() => {
++    setItem(KEYS.CURRENT_PHASE, phaseKey);
++  }, [phaseKey]);
++
++  const getDaysInMonth = useCallback((date: Date) => {
++    const year = date.getFullYear();
++    const month = date.getMonth();
++    const firstDayIndex = new Date(year, month, 1).getDay();
++    const totalDays = new Date(year, month + 1, 0).getDate();
++    const prevMonthTotalDays = new Date(year, month, 0).getDate();
++    const prev = [];
++    for (let i = firstDayIndex - 1; i >= 0; i--) prev.push({ day: prevMonthTotalDays - i, isCurrentMonth: false, date: new Date(year, month - 1, prevMonthTotalDays - i) });
++    const current = [];
++    for (let i = 1; i <= totalDays; i++) current.push({ day: i, isCurrentMonth: true, date: new Date(year, month, i) });
++    const next = [];
++    for (let i = 1; i <= 42 - prev.length - current.length; i++) next.push({ day: i, isCurrentMonth: false, date: new Date(year, month + 1, i) });
++    return [...prev, ...current, ...next];
++  }, []);
++
++  const handleDayClick = (dayDate: Date) => {
++    const yyyy = dayDate.getFullYear();
++    const mm = String(dayDate.getMonth() + 1).padStart(2, '0');
++    const dd = String(dayDate.getDate()).padStart(2, '0');
++    setLmpInput(`${yyyy}-${mm}-${dd}`);
++  };
++
++  const isSelectedLmp = (dayDate: Date) => {
++    if (!lmpInput) return false;
++    const d = new Date(lmpInput);
++    return dayDate.getFullYear() === d.getFullYear() && dayDate.getMonth() === d.getMonth() && dayDate.getDate() === d.getDate();
++  };
++
++  const isBleedingDay = (dayDate: Date) => {
++    if (!lmpInput) return false;
++    const lmp = new Date(lmpInput);
++    const lmpM = new Date(lmp.getFullYear(), lmp.getMonth(), lmp.getDate());
++    const targetM = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
++    const diff = Math.floor((targetM.getTime() - lmpM.getTime()) / (1000 * 60 * 60 * 24));
++    return diff >= 0 && diff < (cycleData?.periodDuration || 5);
++  };
++
++  const isPredictedOvulation = (dayDate: Date) => {
++    if (!lmpInput) return false;
++    const lmp = new Date(lmpInput);
++    const lmpM = new Date(lmp.getFullYear(), lmp.getMonth(), lmp.getDate());
++    const targetM = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
++    const diff = Math.floor((targetM.getTime() - lmpM.getTime()) / (1000 * 60 * 60 * 24));
++    const length = cycleData?.cycleLength || 28;
++    const cycleDay = (diff % length) + 1;
++    const ovulationDay = length - 14;
++    return cycleDay === ovulationDay || cycleDay === ovulationDay + 1;
++  };
++
++  const handleSaveCycle = (e: React.FormEvent) => {
++    e.preventDefault();
++    if (!lmpInput) return;
++    onCycleDataChange({ lmp: lmpInput, cycleLength: Number(lengthInput), periodDuration: Number(durationInput) });
++    setItem(KEYS.CYCLE_TRACKER, JSON.stringify({ lmp: lmpInput, cycleLength: Number(lengthInput), periodDuration: Number(durationInput) }));
++    setIsEditingCycle(false);
++  };
++
++  const handleLogPeriod = async (dateStr: string) => {
++    if (!session) { onLoginClick(); return; }
++    try {
++      const { error } = await supabase.from('cycle_logs').insert({ user_id: session.user.id, start_date: dateStr });
++      if (error) throw error;
++      // Signal parent to reload
++      window.location.reload();
++    } catch (err) {
++      console.error("Failed to log period:", err);
++      alert("Failed to log period. Ensure your database table is set up.");
++    }
++  };
++
++  const handleDeleteLog = async (logId: string) => {
++    try {
++      const { error } = await supabase.from('cycle_logs').delete().eq('id', logId);
++      if (error) throw error;
++      window.location.reload();
++    } catch (err) {
++      console.error("Failed to delete log:", err);
++    }
++  };
++
++  const daysGrid = getDaysInMonth(calendarMonth);
++
++  const renderCalendar = (interactive: boolean) => (
++    <div className="border border-lavender rounded-3xl p-4 bg-white/90 shadow-sm space-y-3 relative z-10">
++      <div className="flex items-center justify-between">
++        <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
++          className="p-1.5 rounded-xl hover:bg-lavender-light text-charcoal transition-all cursor-pointer border border-lavender/30 bg-white/50">
++          <ChevronLeft className="w-4 h-4" />
++        </button>
++        <span className="font-dm-sans font-bold text-xs text-charcoal uppercase tracking-wider">
++          {calendarMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
++        </span>
++        <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
++          className="p-1.5 rounded-xl hover:bg-lavender-light text-charcoal transition-all cursor-pointer border border-lavender/30 bg-white/50">
++          <ChevronRight className="w-4 h-4" />
++        </button>
++      </div>
++      <div className="grid grid-cols-7 gap-1 text-center">
++        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(wd => (
++          <span key={wd} className="text-[9px] font-bold text-warm-gray uppercase tracking-wide">{wd}</span>
++        ))}
++      </div>
++      <div className="grid grid-cols-7 gap-1">
++        {daysGrid.map((cell, idx) => {
++          const isSelected = isSelectedLmp(cell.date);
++          const isBleeding = isBleedingDay(cell.date);
++          const isOvulating = isPredictedOvulation(cell.date);
++          const today = new Date(); today.setHours(0, 0, 0, 0);
++          const isFuture = cell.date > today;
++          if (interactive) {
++            return (
++              <button type="button" key={idx} onClick={() => handleDayClick(cell.date)}
++                disabled={!cell.isCurrentMonth || isFuture}
++                className={`h-8 w-8 mx-auto flex flex-col items-center justify-center text-xs rounded-full transition-all duration-200 cursor-pointer relative ${
++                  !cell.isCurrentMonth || isFuture ? "text-warm-gray/20 pointer-events-none"
++                  : isSelected ? "bg-butter text-charcoal font-bold border-2 border-lavender-dark shadow-sm scale-110"
++                  : isBleeding ? "bg-lavender text-purple-700 font-semibold border border-lavender-dark/30 shadow-inner"
++                  : isOvulating ? "border border-dashed border-butter-dark bg-butter-light/50 text-charcoal font-bold"
++                  : "hover:bg-lavender-light/50 text-charcoal"
++                }`}>
++                <span>{cell.day}</span>
++                {cell.isCurrentMonth && isBleeding && !isSelected && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-purple-500"></span>}
++                {cell.isCurrentMonth && isOvulating && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-butter-dark animate-pulse"></span>}
++              </button>
++            );
++          }
++          return (
++            <div key={idx} className={`h-8 w-8 mx-auto flex flex-col items-center justify-center text-xs rounded-full relative ${
++              !cell.isCurrentMonth ? "text-warm-gray/25"
++              : isSelected ? "bg-butter text-charcoal font-bold border-2 border-lavender-dark shadow-sm scale-110"
++              : isBleeding ? "bg-lavender text-purple-700 font-semibold border border-lavender-dark/30 shadow-inner"
++              : isOvulating ? "border border-dashed border-butter-dark bg-butter-light/50 text-charcoal font-bold"
++              : "text-charcoal"
++            }`}>
++              <span>{cell.day}</span>
++              {cell.isCurrentMonth && isBleeding && !isSelected && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-purple-500"></span>}
++              {cell.isCurrentMonth && isOvulating && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-butter-dark animate-pulse"></span>}
++            </div>
++          );
++        })}
++      </div>
++    </div>
++  );
++
++  // Setup view
++  if (!cycleData || isEditingCycle) {
++    return (
++      <div className="glass-panel rounded-3xl p-6 border-lavender bg-white/60 space-y-5 animate-fade-in">
++        <div className="flex items-center justify-between border-b border-lavender/30 pb-3">
++          <div className="flex items-center space-x-2">
++            <Calendar className="w-5 h-5 text-purple-400" />
++            <h3 className="font-dm-sans font-bold text-base text-charcoal">Align with your Menstrual Cycle</h3>
++          </div>
++          {cycleData && (
++            <button onClick={() => setIsEditingCycle(false)} className="text-xs font-semibold text-warm-gray hover:text-charcoal px-3 py-1 rounded-xl hover:bg-lavender-light transition-all">Cancel</button>
++          )}
++        </div>
++        {!session ? (
++          <div className="bg-lavender-light/40 border border-lavender/50 p-6 rounded-2xl text-center space-y-4">
++            <p className="text-sm text-charcoal font-medium">Please sign in to securely save your health history and enable anomaly detection.</p>
++            <button onClick={onLoginClick} className="bg-butter hover:bg-butter-dark text-charcoal font-bold py-2.5 px-6 rounded-2xl transition-all shadow-sm">Sign in to Tracker</button>
++          </div>
++        ) : (
++          <form onSubmit={handleSaveCycle} className="space-y-6">
++            <div className="space-y-3">
++              <label className="block text-[10px] font-bold text-charcoal uppercase tracking-wider">Select Date on Calendar:</label>
++              {renderCalendar(true)}
++              {lmpInput && (
++                <button type="button" onClick={() => handleLogPeriod(lmpInput)}
++                  className="w-full mt-4 bg-butter hover:bg-butter-dark text-charcoal border border-butter-dark/50 font-bold py-3.5 rounded-2xl transition-all-300 shadow-sm cursor-pointer">
++                  Log Date: {new Date(lmpInput).toLocaleDateString()}
++                </button>
++              )}
++            </div>
++            <div className="pt-4 border-t border-lavender/40">
++              <button type="button" onClick={() => handleLogPeriod(new Date().toISOString().split("T")[0])}
++                className="w-full bg-lavender hover:bg-lavender-dark text-purple-900 border border-lavender-dark/50 font-bold py-3.5 rounded-2xl transition-all-300 shadow-sm flex items-center justify-center gap-2 cursor-pointer">
++                <span className="text-lg">🩸</span><span>My Period Started Today</span>
++              </button>
++            </div>
++            {cycleLogs.length > 0 && (
++              <div className="pt-6">
++                <h4 className="text-xs font-bold text-charcoal uppercase tracking-wider mb-3">Your Log History</h4>
++                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
++                  {cycleLogs.map(log => (
++                    <div key={log.id} className="flex justify-between items-center bg-white/60 border border-lavender/40 p-3 rounded-xl group">
++                      <span className="text-sm font-semibold text-charcoal">{new Date(log.start_date).toLocaleDateString(undefined, { timeZone: 'UTC' })}</span>
++                      <button type="button" onClick={() => handleDeleteLog(log.id)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors cursor-pointer">
++                        <Trash2 className="w-4 h-4" />
++                      </button>
++                    </div>
++                  ))}
++                </div>
++              </div>
++            )}
++          </form>
++        )}
++      </div>
++    );
++  }
++
++  // Visual status view
++  return (
++    <div className="glass-panel rounded-3xl p-6 border-lavender bg-white/70 space-y-6 animate-fade-in relative overflow-hidden shadow-xl shadow-lavender/10">
++      <div className={`absolute -right-24 -top-24 w-60 h-60 bg-gradient-to-br ${phaseVisual.bgGradient} rounded-full blur-3xl opacity-80 pointer-events-none`}></div>
++      <div className={`absolute -left-24 -bottom-24 w-60 h-60 bg-gradient-to-tr ${phaseVisual.bgGradient} rounded-full blur-3xl opacity-80 pointer-events-none`}></div>
++
++      <div className="flex items-center justify-between border-b border-lavender/30 pb-3 relative z-10">
++        <div className="flex items-center space-x-2">
++          <span className="w-2 h-2 rounded-full bg-butter-dark animate-pulse"></span>
++          <h3 className="font-dm-sans font-bold text-sm text-charcoal">Cycle Tracker & Insights</h3>
++        </div>
++        <button type="button" onClick={() => setIsEditingCycle(true)}
++          className="p-1.5 rounded-xl text-warm-gray hover:text-charcoal hover:bg-lavender-light transition-all flex items-center gap-1 text-xs font-semibold cursor-pointer border border-lavender/20 bg-white/40">
++          <Settings className="w-3.5 h-3.5" /><span>Edit</span>
++        </button>
++      </div>
++
++      {/* SVG Radial Gauge */}
++      <div className="flex flex-col items-center justify-center py-2 relative z-10">
++        <div className="relative flex items-center justify-center">
++          <div className="absolute rounded-full animate-breath transition-all duration-700"
++            style={{ width: `${radius * 2 - 12}px`, height: `${radius * 2 - 12}px`,
++              background: `radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 40%, transparent 100%)`,
++              boxShadow: `0 0 30px 10px ${phaseVisual.dialGlow}` }} />
++          <svg height={radius * 2} width={radius * 2} className="relative z-10 -rotate-90 select-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
++            <circle stroke="rgba(0, 0, 0, 0.05)" fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx={radius} cy={radius} />
++            <circle className={`transition-all duration-1000 ease-out ${phaseVisual.progressStroke}`} fill="transparent" strokeWidth={stroke}
++              strokeDasharray={`${circumference} ${circumference}`} style={{ strokeDashoffset }} strokeLinecap="round"
++              r={normalizedRadius} cx={radius} cy={radius} />
++          </svg>
++          <div className="absolute inset-0 flex flex-col items-center justify-center z-20 text-center p-4">
++            <div className="w-7 h-7 rounded-full bg-white/95 border border-lavender/45 flex items-center justify-center shadow-sm text-xs animate-float">
++              {activePhaseDetails?.moonIcon}
++            </div>
++            <span className="text-3xl font-dm-sans font-extrabold text-charcoal tracking-tight mt-1 leading-none">Day {cycleState?.currentDay}</span>
++            <span className={`text-[10px] font-bold uppercase tracking-wider ${phaseVisual.accentText} mt-1`}>{activePhaseDetails?.title.replace(" Phase", "")}</span>
++            <span className="text-[9px] font-medium text-warm-gray mt-0.5">{cycleState?.daysUntilNextPeriod} days to next</span>
++          </div>
++        </div>
++      </div>
++
++      {/* Hormone Forecast */}
++      <div className="space-y-3 relative z-10 bg-white/60 p-4 rounded-3xl border border-lavender/35">
++        <div className="flex items-center justify-between">
++          <span className="text-[10px] font-bold text-charcoal uppercase tracking-wider flex items-center gap-1">
++            <Activity className="w-3.5 h-3.5 text-butter-dark" />Hormone & State Forecast
++          </span>
++          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${phaseVisual.accentBg} border`}>Pregnancy Chance: {phaseVisual.pregnancyChance}</span>
++        </div>
++        <div className="grid grid-cols-2 gap-3 pt-1">
++          {phaseVisual.insights.map((gauge: any) => (
++            <div key={gauge.title} className="space-y-1">
++              <div className="flex justify-between text-[9px] font-bold text-warm-gray">
++                <span>{gauge.title}</span><span className="text-charcoal">{gauge.value}%</span>
++              </div>
++              <div className="w-full h-1.5 bg-lavender-light rounded-full overflow-hidden border border-lavender/20">
++                <div style={{ width: `${gauge.value}%` }} className={`h-full ${gauge.color} rounded-full transition-all duration-1000`}></div>
++              </div>
++            </div>
++          ))}
++        </div>
++      </div>
++
++      {/* Anomaly Check-in */}
++      {isCycleDelayed && (
++        <div className="bg-red-50/80 border border-red-200 p-4 rounded-3xl relative z-10 space-y-2 animate-fade-in shadow-sm">
++          <div className="flex items-center gap-2">
++            <AlertCircle className="w-4 h-4 text-red-500" />
++            <span className="text-[10px] font-bold text-red-700 uppercase tracking-wider">Mension Check-in</span>
++          </div>
++          <p className="text-xs text-charcoal leading-relaxed font-medium">
++            Hey, I noticed your cycle is a bit delayed this month (Day {cycleState?.currentDay}). Have you been under a lot of stress lately?
++          </p>
++          <button onClick={onStartChat} className="w-full mt-2 bg-white hover:bg-red-100 text-red-600 text-xs font-bold py-2 rounded-xl border border-red-200 transition-all shadow-sm cursor-pointer">
++            Chat with Ova about this
++          </button>
++        </div>
++      )}
++
++      {/* Ova Insights */}
++      <div className="bg-white/80 border border-lavender/50 p-4 rounded-3xl relative z-10 space-y-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
++        <div className="flex items-start space-x-2">
++          <Heart className="w-4 h-4 text-butter-dark shrink-0 mt-0.5 fill-butter-dark/10" />
++          <div className="space-y-0.5">
++            <span className="text-[10px] font-bold text-charcoal uppercase tracking-wider block">Ova Insights</span>
++            <p className="text-[11px] text-charcoal/80 leading-relaxed font-medium">{phaseVisual.mensionTip}</p>
++          </div>
++        </div>
++      </div>
++
++      {/* Symptom Logger */}
++      <div className="space-y-3 relative z-10">
++        <div className="flex items-center justify-between">
++          <span className="text-[10px] font-bold text-charcoal uppercase tracking-wider flex items-center gap-1">
++            <Check className="w-3.5 h-3.5 text-butter-dark" />How do you feel today?
++          </span>
++          <span className="text-[9px] text-warm-gray font-semibold">Saved locally</span>
++        </div>
++        <div className="flex flex-wrap gap-2">
++          {phaseVisual.symptoms.map((symptom: string) => {
++            const isSelected = selectedSymptoms.includes(symptom);
++            return (
++              <button type="button" key={symptom}
++                onClick={() => setSelectedSymptoms(prev => isSelected ? prev.filter(s => s !== symptom) : [...prev, symptom])}
++                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 flex items-center gap-1 cursor-pointer ${
++                  isSelected ? `${phaseVisual.accentBg} shadow-sm scale-102` : "bg-white/50 border-lavender/50 text-warm-gray hover:bg-lavender-light hover:text-charcoal"
++                }`}>
++                {isSelected && <Check className="w-3 h-3 shrink-0" />}
++                <span>{symptom}</span>
++              </button>
++            );
++          })}
++        </div>
++      </div>
++
++      {/* Predicted Calendar */}
++      <div className="border-t border-lavender/35 pt-4 relative z-10">
++        <button type="button" onClick={() => setShowCycleCalendar(!showCycleCalendar)}
++          className="w-full flex items-center justify-between py-1 text-[10px] font-bold text-charcoal uppercase tracking-wider hover:text-purple-700 transition-all cursor-pointer">
++          <span>📅 Predicted Cycle Calendar</span><span>{showCycleCalendar ? "Hide" : "Show"}</span>
++        </button>
++        {showCycleCalendar && (
++          <div className="mt-3 space-y-3 animate-fade-in">
++            {renderCalendar(false)}
++            <div className="flex flex-wrap gap-3 justify-center text-[8px] font-bold text-warm-gray uppercase tracking-wider">
++              <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-butter border border-lavender-dark/50"></span><span>Start Date</span></div>
++              <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-lavender border border-lavender-dark/30"></span><span>Bleed Days</span></div>
++              <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full border border-dashed border-butter-dark bg-butter-light/50"></span><span>Ovulation Window</span></div>
++            </div>
++          </div>
++        )}
++      </div>
++    </div>
++  );
++}
+diff --git a/src/components/dashboard/MessageAnalyzer.tsx b/src/components/dashboard/MessageAnalyzer.tsx
+new file mode 100644
+index 0000000..fb0c00b
+--- /dev/null
++++ b/src/components/dashboard/MessageAnalyzer.tsx
+@@ -0,0 +1,194 @@
++"use client";
++
++import React, { useState } from "react";
++import { Activity, ShieldCheck, Flower, AlertCircle } from "lucide-react";
++
++interface MessageAnalyzerProps {
++  cyclePhase: string;
++  cycleDay: number | null;
++  cyclePhaseName: string | null;
++  session?: any;
++  onSave: (analysis: { message: string; phase: string; result: string; sender_label: string }) => void;
++  onToxicDetected: () => void;
++}
++
++export default function MessageAnalyzer({ cyclePhase, cycleDay, cyclePhaseName, session, onSave, onToxicDetected }: MessageAnalyzerProps) {
++  const [messageText, setMessageText] = useState("");
++  const [senderLabel, setSenderLabel] = useState("");
++  const [isAnalyzing, setIsAnalyzing] = useState(false);
++  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
++  const [isCurrentMessageToxic, setIsCurrentMessageToxic] = useState(false);
++  const [error, setError] = useState("");
++
++  const handleAnalyze = (e: React.FormEvent) => {
++    e.preventDefault();
++    if (!messageText.trim()) { setError("Please paste the message you received first."); return; }
++    if (!senderLabel.trim()) { setError("Please provide a sender label (e.g. boyfriend, boss, roommate)."); return; }
++
++    setError("");
++    setIsAnalyzing(true);
++    setAnalysisResult(null);
++
++    const headers: Record<string, string> = { "Content-Type": "application/json" };
++    if (session?.access_token) {
++      headers["Authorization"] = `Bearer ${session.access_token}`;
++    }
++
++    fetch("/api/analyze", {
++      method: "POST",
++      headers,
++      body: JSON.stringify({ text: messageText.trim(), cycle_phase: cyclePhase })
++    })
++      .then(async (res) => {
++        if (!res.ok) {
++          const errData = await res.json().catch(() => ({}));
++          throw new Error(errData.error || "Server analysis failed");
++        }
++        return res.json();
++      })
++      .then((data) => {
++        setAnalysisResult(data.response);
++        setIsCurrentMessageToxic(!!data.isToxic);
++        setIsAnalyzing(false);
++      })
++      .catch((err: any) => {
++        console.error("API Error:", err);
++        setError("Something went wrong — try again in a moment 💜");
++        setIsAnalyzing(false);
++      });
++  };
++
++  const handleSave = () => {
++    if (!analysisResult) return;
++    onSave({
++      message: messageText,
++      phase: cyclePhase,
++      result: analysisResult,
++      sender_label: senderLabel.trim().toLowerCase(),
++    });
++    setMessageText("");
++    setSenderLabel("");
++    setAnalysisResult(null);
++    setIsCurrentMessageToxic(false);
++  };
++
++  const handleClear = () => {
++    setMessageText("");
++    setSenderLabel("");
++    setAnalysisResult(null);
++    setIsCurrentMessageToxic(false);
++  };
++
++  const renderText = (text: string) => {
++    return text.split("\n\n").map((paragraph, index) => {
++      if (paragraph.startsWith("###")) {
++        return <h4 key={index} className="font-dm-sans font-bold text-base text-charcoal pt-2">{paragraph.replace("### ", "")}</h4>;
++      }
++      if (paragraph.startsWith("####")) {
++        return <h5 key={index} className="font-dm-sans font-bold text-sm text-charcoal/90 uppercase tracking-wide pt-1">{paragraph.replace("#### ", "")}</h5>;
++      }
++      return <p key={index} className="text-charcoal/85">{paragraph}</p>;
++    });
++  };
++
++  return (
++    <div className="glass-panel rounded-3xl p-6 border-lavender bg-white/60 space-y-6">
++      <form onSubmit={handleAnalyze} className="space-y-5">
++        <div className="space-y-2">
++          <label htmlFor="message-pasted" className="block text-[10px] font-bold text-charcoal uppercase tracking-wider">
++            1) Paste the message that made you feel weird:
++          </label>
++          <textarea id="message-pasted" rows={4} value={messageText}
++            onChange={(e) => { setMessageText(e.target.value); if (error) setError(""); }}
++            placeholder="Examples: 'If you actually cared about us, you wouldn't go out tonight'..."
++            className="w-full rounded-3xl border border-lavender p-4 text-sm focus:outline-none focus:ring-2 focus:ring-lavender-dark focus:border-transparent bg-white/70 text-charcoal placeholder-warm-gray/40 font-normal leading-relaxed"
++            disabled={isAnalyzing} />
++        </div>
++
++        <div className="space-y-2">
++          <label htmlFor="sender-label" className="block text-[10px] font-bold text-charcoal uppercase tracking-wider">
++            2) Who sent this message? (e.g. boyfriend, boss, ex — no real names):
++          </label>
++          <input id="sender-label" type="text" value={senderLabel}
++            onChange={(e) => { setSenderLabel(e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, "")); if (error) setError(""); }}
++            placeholder="e.g. boyfriend, boss, ex, sister"
++            className="w-full rounded-3xl border border-lavender p-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-lavender-dark focus:border-transparent bg-white/70 text-charcoal placeholder-warm-gray/45 font-semibold"
++            disabled={isAnalyzing} />
++        </div>
++
++        {error && (
++          <p className="text-xs text-red-500 font-bold flex items-center gap-1.5 mt-2">
++            <AlertCircle className="w-4 h-4 text-red-500 animate-pulse" />{error}
++          </p>
++        )}
++
++        {!isAnalyzing && !analysisResult && (
++          <div className="space-y-3">
++            <button type="submit"
++              className="w-full bg-butter hover:bg-butter-dark text-charcoal border border-butter-dark/50 font-bold py-3.5 rounded-3xl transition-all-300 shadow-md flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 cursor-pointer">
++              <Activity className="w-4.5 h-4.5 text-charcoal" /><span>Analyze Message & Sensitivity</span>
++            </button>
++            <p className="text-[10px] text-center text-warm-gray font-semibold">
++              Ova will analyze this message factoring in your current <strong>{cyclePhaseName || cyclePhase}</strong>.
++            </p>
++          </div>
++        )}
++      </form>
++
++      {/* Loading State */}
++      {isAnalyzing && (
++        <div className="py-12 flex flex-col items-center justify-center space-y-4 animate-pulse-slow">
++          <div className="relative w-16 h-16 flex items-center justify-center">
++            <Flower className="w-12 h-12 text-emerald-400 animate-bounce" />
++            <div className="absolute inset-0 border-4 border-t-lavender-dark border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
++          </div>
++          <div className="text-center">
++            <p className="text-sm font-semibold text-charcoal font-dm-sans">Ova is reading between the lines...</p>
++            <p className="text-xs text-warm-gray mt-1 font-medium">Factoring in your cycle day {cycleDay} ({cyclePhase} phase)...</p>
++          </div>
++        </div>
++      )}
++
++      {/* Analysis Result */}
++      {analysisResult && (
++        <div className="animate-fade-in border border-lavender/80 bg-white rounded-3xl p-6 space-y-5 shadow-md shadow-lavender/10 relative overflow-hidden">
++          <div className="absolute -right-8 -top-8 w-24 h-24 bg-butter/25 rounded-full blur-xl"></div>
++          <div className="absolute -left-8 -bottom-8 w-24 h-24 bg-lavender/25 rounded-full blur-xl"></div>
++
++          <div className="flex items-center justify-between border-b border-lavender/40 pb-3">
++            <div className="flex items-center gap-2">
++              <span className="text-base">📝</span>
++              <span className="text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-100 uppercase tracking-wide">Ova's Analysis</span>
++            </div>
++            <span className="text-[10px] text-warm-gray font-bold uppercase tracking-wider bg-lavender-light border border-lavender/50 px-2.5 py-0.5 rounded-full">
++              From: {senderLabel} • Day {cycleDay}
++            </span>
++          </div>
++
++          <div className="text-sm text-charcoal/90 leading-relaxed space-y-4 font-normal whitespace-pre-wrap">
++            {renderText(analysisResult)}
++          </div>
++
++          <div className="flex flex-col gap-3 pt-2">
++            <div className="flex gap-3">
++              <button onClick={handleSave}
++                className="flex-1 bg-butter hover:bg-butter-dark text-charcoal border border-butter-dark/50 font-bold py-2.5 rounded-2xl transition-all-300 text-xs flex items-center justify-center gap-2 hover:scale-102 shadow-sm cursor-pointer">
++                <ShieldCheck className="w-4 h-4 text-charcoal" /><span>Save to Reflection Log</span>
++              </button>
++              <button onClick={handleClear}
++                className="px-4 py-2.5 border border-lavender/80 bg-white hover:bg-lavender-light/35 rounded-2xl text-xs font-bold text-warm-gray hover:text-charcoal transition-all-300 cursor-pointer">
++                Clear
++              </button>
++            </div>
++            {isCurrentMessageToxic && (
++              <button onClick={onToxicDetected}
++                className="w-full mt-2 py-3 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold rounded-2xl transition-all shadow-sm text-sm">
++                Need help getting out? 💜
++              </button>
++            )}
++          </div>
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/src/components/dashboard/PatternMemory.tsx b/src/components/dashboard/PatternMemory.tsx
+new file mode 100644
+index 0000000..f25a37d
+--- /dev/null
++++ b/src/components/dashboard/PatternMemory.tsx
+@@ -0,0 +1,122 @@
++"use client";
++
++import React, { useState } from "react";
++import { Sparkles, Eye, RefreshCw } from "lucide-react";
++import type { SavedAnalysis } from "./types";
++
++interface PatternMemoryProps {
++  savedAnalyses: SavedAnalysis[];
++  session?: any;
++}
++
++export default function PatternMemory({ savedAnalyses, session }: PatternMemoryProps) {
++  const [patternSummaries, setPatternSummaries] = useState<Record<string, string>>({});
++  const [loadingPatterns, setLoadingPatterns] = useState<Record<string, boolean>>({});
++
++  // Group by sender label
++  const senderGroups = savedAnalyses.reduce((groups: Record<string, SavedAnalysis[]>, item) => {
++    const sender = (item.sender_label || "unknown").trim().toLowerCase();
++    if (!groups[sender]) groups[sender] = [];
++    groups[sender].push(item);
++    return groups;
++  }, {});
++
++  const patternSenders = Object.keys(senderGroups).filter(sender => senderGroups[sender].length >= 5);
++
++  const handleRevealPatterns = (sender: string) => {
++    const group = senderGroups[sender];
++    const msgs = group.map(i => i.message);
++    const results = group.map(i => i.result);
++
++    setLoadingPatterns(prev => ({ ...prev, [sender]: true }));
++
++    const headers: Record<string, string> = { "Content-Type": "application/json" };
++    if (session?.access_token) {
++      headers["Authorization"] = `Bearer ${session.access_token}`;
++    }
++
++    fetch("/api/patterns", {
++      method: "POST",
++      headers,
++      body: JSON.stringify({ sender_label: sender, messages: msgs, results })
++    })
++      .then(async (res) => {
++        if (!res.ok) {
++          const errData = await res.json().catch(() => ({}));
++          throw new Error(errData.error || "Server pattern synthesis failed");
++        }
++        return res.json();
++      })
++      .then((data) => {
++        setPatternSummaries(prev => ({ ...prev, [sender]: data.response }));
++        setLoadingPatterns(prev => ({ ...prev, [sender]: false }));
++      })
++      .catch((err: any) => {
++        console.error("API Patterns Error:", err);
++        setPatternSummaries(prev => ({ ...prev, [sender]: "Something went wrong — try again in a moment 💜" }));
++        setLoadingPatterns(prev => ({ ...prev, [sender]: false }));
++      });
++  };
++
++  if (patternSenders.length === 0) {
++    return (
++      <section className="space-y-4">
++        <div className="flex items-center space-x-2">
++          <Sparkles className="w-5 h-5 text-amber-500 animate-float" />
++          <h3 className="font-dm-sans font-bold text-base text-charcoal">Pattern Memory</h3>
++        </div>
++        <div className="glass-panel rounded-3xl p-5 text-center border-lavender bg-white/40 text-[11px] text-warm-gray leading-normal font-medium animate-fade-in">
++          🌻 Ova's tip: Analyze 5+ messages from the same sender label (like "boyfriend" or "boss") to unlock pattern recognition over time.
++        </div>
++      </section>
++    );
++  }
++
++  return (
++    <section className="space-y-4">
++      <div className="flex items-center space-x-2">
++        <Sparkles className="w-5 h-5 text-amber-500 animate-float" />
++        <h3 className="font-dm-sans font-bold text-base text-charcoal">Pattern Memory</h3>
++      </div>
++
++      <div className="space-y-4">
++        {patternSenders.map(sender => {
++          const count = senderGroups[sender].length;
++          const patternText = patternSummaries[sender];
++          const isLoading = !!loadingPatterns[sender];
++
++          return (
++            <div key={sender} className="glass-panel-yellow rounded-3xl p-5 border-butter space-y-3 animate-bloom">
++              <h4 className="font-dm-sans font-bold text-xs text-charcoal/90 flex items-center gap-1.5 uppercase tracking-wide">
++                <span>🛡️</span><span>Pattern Card: {sender}</span>
++              </h4>
++              <p className="text-xs text-charcoal/80 leading-normal">
++                You've shared {count} messages from <strong>{sender}</strong>. Here's what we've noticed over time:
++              </p>
++
++              {patternText ? (
++                <div className="text-xs text-charcoal/95 leading-relaxed bg-white/80 p-3.5 rounded-2xl border border-butter-dark/50 whitespace-pre-wrap font-medium">
++                  {patternText.split("\n\n").map((p, idx) => {
++                    const cleanText = p.replace(/^You've shared.*?Here's what we've noticed over time:\s*/i, "");
++                    if (!cleanText) return null;
++                    return <p key={idx} className="mb-2 last:mb-0">{cleanText}</p>;
++                  })}
++                </div>
++              ) : isLoading ? (
++                <div className="py-4 flex flex-col items-center justify-center space-y-2">
++                  <RefreshCw className="w-5 h-5 text-amber-500 animate-spin" />
++                  <span className="text-[10px] text-warm-gray font-semibold">Synthesizing behavioral trends...</span>
++                </div>
++              ) : (
++                <button onClick={() => handleRevealPatterns(sender)}
++                  className="w-full flex items-center justify-center space-x-2 py-2.5 bg-white hover:bg-butter-light border border-butter-dark/60 rounded-2xl text-[10px] font-bold text-charcoal transition-all-300 hover:scale-101 cursor-pointer">
++                  <Eye className="w-3.5 h-3.5" /><span>Reveal Behavioral Analysis</span>
++                </button>
++              )}
++            </div>
++          );
++        })}
++      </div>
++    </section>
++  );
++}
+diff --git a/src/components/dashboard/ReflectionHistory.tsx b/src/components/dashboard/ReflectionHistory.tsx
+new file mode 100644
+index 0000000..cd6896c
+--- /dev/null
++++ b/src/components/dashboard/ReflectionHistory.tsx
+@@ -0,0 +1,68 @@
++"use client";
++
++import React from "react";
++import { FileText, Trash2, ArrowRight } from "lucide-react";
++import type { SavedAnalysis } from "./types";
++
++interface ReflectionHistoryProps {
++  analyses: SavedAnalysis[];
++  onDelete: (id: string | number) => void;
++  onView: (analysis: SavedAnalysis) => void;
++}
++
++export default function ReflectionHistory({ analyses, onDelete, onView }: ReflectionHistoryProps) {
++  if (analyses.length === 0) {
++    return (
++      <section className="space-y-4">
++        <div className="flex items-center space-x-2">
++          <FileText className="w-5 h-5 text-purple-400" />
++          <h3 className="font-dm-sans font-bold text-base text-charcoal">Reflection History</h3>
++        </div>
++        <div className="glass-panel rounded-3xl p-6 text-center border-dashed border-lavender/50 bg-white/30 text-xs text-warm-gray">
++          No logs saved yet. After running an analysis, click "Save to Reflection Log".
++        </div>
++      </section>
++    );
++  }
++
++  return (
++    <section className="space-y-4">
++      <div className="flex items-center space-x-2">
++        <FileText className="w-5 h-5 text-purple-400" />
++        <h3 className="font-dm-sans font-bold text-base text-charcoal">Reflection History</h3>
++      </div>
++
++      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
++        {analyses.map(item => (
++          <div key={item.id} className="glass-panel rounded-3xl p-4 border-lavender/40 bg-white/90 shadow-sm relative group hover:border-lavender transition-all-300">
++            <div className="flex justify-between items-start gap-4 mb-2">
++              <div className="flex items-center gap-1.5">
++                <span className="text-[9px] uppercase font-bold tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
++                  {item.phase} Phase
++                </span>
++                {item.sender_label && (
++                  <span className="text-[9px] uppercase font-bold tracking-wider text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-butter-dark/50">
++                    {item.sender_label}
++                  </span>
++                )}
++              </div>
++              <button onClick={() => onDelete(item.id)}
++                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-600 transition-all duration-200 self-start cursor-pointer"
++                title="Delete reflection">
++                <Trash2 className="w-3.5 h-3.5" />
++              </button>
++            </div>
++            <div className="space-y-3">
++              <p className="text-xs text-charcoal/80 italic">"{item.message.substring(0, 100)}{item.message.length > 100 ? "..." : ""}"</p>
++              <button onClick={() => onView(item)}
++                className="w-full flex items-center justify-between p-2 rounded-2xl bg-lavender-light/35 border border-lavender/30 text-[10px] font-bold text-charcoal hover:bg-lavender transition-all-300 cursor-pointer">
++                <span>Review Full Analysis</span>
++                <ArrowRight className="w-3 h-3" />
++              </button>
++            </div>
++          </div>
++        ))}
++      </div>
++    </section>
++  );
++}
+diff --git a/src/components/dashboard/SafeExitGuide.tsx b/src/components/dashboard/SafeExitGuide.tsx
+new file mode 100644
+index 0000000..388c42c
+--- /dev/null
++++ b/src/components/dashboard/SafeExitGuide.tsx
+@@ -0,0 +1,121 @@
++"use client";
++
++import React from "react";
++import { ShieldCheck } from "lucide-react";
++
++interface SafeExitGuideProps {
++  isOpen: boolean;
++  onClose: () => void;
++}
++
++export default function SafeExitGuide({ isOpen, onClose }: SafeExitGuideProps) {
++  if (!isOpen) return null;
++
++  return (
++    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/50 backdrop-blur-md animate-fade-in">
++      <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-red-100 relative">
++        <button
++          onClick={onClose}
++          className="absolute top-5 right-5 p-2 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500 transition-colors cursor-pointer"
++        >
++          ✕
++        </button>
++
++        <div className="flex items-center gap-2 mb-6">
++          <ShieldCheck className="w-6 h-6 text-purple-600" />
++          <h3 className="font-dm-sans font-bold text-2xl text-charcoal">Safe Exit Guide</h3>
++        </div>
++
++        <p className="text-sm text-charcoal/80 mb-8 leading-relaxed">
++          If you're feeling unsafe or realizing it's time to leave, you don't have to do it alone. Here are practical, step-by-step actions you can take to protect yourself. Take what you need, at your own pace.
++        </p>
++
++        <div className="space-y-6">
++          {/* Step 1 */}
++          <div className="bg-purple-50/50 border border-purple-100 p-5 rounded-2xl">
++            <h4 className="font-bold text-purple-900 mb-2 flex items-center gap-2">
++              <span className="bg-purple-200 text-purple-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
++              Document Evidence Safely
++            </h4>
++            <p className="text-sm text-charcoal/80 leading-relaxed">
++              Take screenshots of manipulative or threatening messages. Email them to a secure, hidden account or send them to a trusted friend. Delete the evidence from your phone if you suspect your device is being monitored.
++            </p>
++          </div>
++
++          {/* Step 2 */}
++          <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-2xl">
++            <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
++              <span className="bg-blue-200 text-blue-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
++              Tell a Trusted Person
++            </h4>
++            <p className="text-sm text-charcoal/80 leading-relaxed">
++              Abuse thrives in isolation. Pick one trusted person—a friend, sister, colleague, or professional—and tell them the truth about what is happening. Establishing a code word for emergencies can be life-saving.
++            </p>
++          </div>
++
++          {/* Step 3 */}
++          <div className="bg-green-50/50 border border-green-100 p-5 rounded-2xl">
++            <h4 className="font-bold text-green-900 mb-2 flex items-center gap-2">
++              <span className="bg-green-200 text-green-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
++              Financial Independence
++            </h4>
++            <p className="text-sm text-charcoal/80 leading-relaxed">
++              Start setting aside emergency cash or open a secret bank account if you can safely do so. Gather essential documents (passports, Aadhar card, banking details, property papers) and keep them in a safe location outside your home.
++            </p>
++          </div>
++
++          {/* Step 4 */}
++          <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
++            <h4 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
++              <span className="bg-amber-200 text-amber-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span>
++              Safety Planning
++            </h4>
++            <p className="text-sm text-charcoal/80 leading-relaxed">
++              Identify the safest rooms in your house (avoid kitchens or rooms with weapons). Plan an escape route. Turn off location sharing on your phone and social media apps. If you fear immediate violence, do not confront them; leave when they are not home.
++            </p>
++          </div>
++
++          {/* Step 5 */}
++          <div className="bg-red-50/50 border border-red-100 p-5 rounded-2xl">
++            <h4 className="font-bold text-red-900 mb-3 flex items-center gap-2">
++              <span className="bg-red-200 text-red-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">5</span>
++              Professional Help (India)
++            </h4>
++            <div className="space-y-3">
++              <div className="bg-white p-3 rounded-xl border border-red-100 shadow-sm flex items-center justify-between">
++                <div>
++                  <span className="font-bold text-charcoal block text-sm">National Commission for Women</span>
++                  <span className="text-xs text-warm-gray">24/7 Helpline for women in distress</span>
++                </div>
++                <a href="tel:7827170170" className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200">7827170170</a>
++              </div>
++              <div className="bg-white p-3 rounded-xl border border-red-100 shadow-sm flex items-center justify-between">
++                <div>
++                  <span className="font-bold text-charcoal block text-sm">iCall Helpline</span>
++                  <span className="text-xs text-warm-gray">Psychosocial counseling (Mon-Sat)</span>
++                </div>
++                <a href="tel:9152987821" className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200">9152987821</a>
++              </div>
++              <div className="bg-white p-3 rounded-xl border border-red-100 shadow-sm flex items-center justify-between">
++                <div>
++                  <span className="font-bold text-charcoal block text-sm">Vandrevala Foundation</span>
++                  <span className="text-xs text-warm-gray">24/7 Mental health crisis support</span>
++                </div>
++                <a href="tel:9999666555" className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200">9999 666 555</a>
++              </div>
++            </div>
++          </div>
++        </div>
++
++        <div className="mt-8 pt-4 border-t border-lavender/30 flex justify-end">
++          <button
++            onClick={onClose}
++            className="px-6 py-2.5 bg-lavender-light hover:bg-lavender text-charcoal font-bold rounded-2xl transition-all shadow-sm cursor-pointer"
++          >
++            Close Guide
++          </button>
++        </div>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/components/dashboard/types.ts b/src/components/dashboard/types.ts
+new file mode 100644
+index 0000000..deffecf
+--- /dev/null
++++ b/src/components/dashboard/types.ts
+@@ -0,0 +1,20 @@
++export interface SavedAnalysis {
++  id: string | number;
++  message: string;
++  phase: string;
++  result: string;
++  timestamp: string;
++  sender_label?: string;
++}
++
++export interface CycleData {
++  lmp: string;
++  cycleLength: number;
++  periodDuration: number;
++}
++
++export interface CycleLog {
++  id: string;
++  start_date: string;
++  notes?: string;
++}

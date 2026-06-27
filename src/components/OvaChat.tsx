@@ -209,19 +209,19 @@ export default function OvaChat() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-65px)] md:h-screen bg-white/50 max-w-4xl mx-auto w-full p-4 md:p-6 animate-slide-up">
+    <div className="flex-1 flex flex-col h-[calc(100vh-65px)] md:h-screen bg-white/50 max-w-7xl mx-auto w-full p-4 md:p-6 animate-slide-up">
       {/* Chat Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-lavender pb-4 gap-3 shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-black/5 pb-4 gap-3 shrink-0">
         <div className="flex items-center space-x-3">
           <div className="relative">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-lavender to-butter flex items-center justify-center shadow-md">
-              <span className="text-xl">👩🏼‍⚕️</span>
+            <div className="w-11 h-11 rounded-full bg-lavender flex items-center justify-center shadow-sm">
+              <span className="text-xl">🌙</span>
             </div>
             <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full"></span>
           </div>
           <div>
-            <h3 className="font-dm-sans font-bold text-base text-charcoal">Ova</h3>
-            <p className="text-xs text-emerald-600 font-medium">Active & listening</p>
+            <h3 className="font-dm-sans font-medium text-base text-charcoal">Ova</h3>
+            <p className="text-xs text-warm-gray font-light">Active & listening</p>
           </div>
         </div>
 
@@ -273,19 +273,26 @@ export default function OvaChat() {
           return (
             <div
               key={msg.id}
-              className={`flex ${isMension ? "justify-start" : "justify-end"} animate-fade-in`}
+              className={`flex ${isMension ? "justify-start" : "justify-end"} animate-fade-in w-full group mb-2`}
             >
-              <div
-                className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                  isMension
-                    ? "bg-white text-charcoal shadow-md shadow-lavender/10 border border-lavender/65 rounded-tl-sm"
-                    : "bg-butter text-charcoal border border-butter-dark/50 shadow-sm rounded-tr-sm"
-                }`}
-              >
-                <p className="whitespace-pre-wrap font-normal">{msg.text}</p>
-                <span className="block text-[9px] text-warm-gray/70 text-right mt-1.5 font-medium">
-                  {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </span>
+              <div className={`flex max-w-[85%] sm:max-w-[70%] items-end gap-2 ${!isMension && "flex-row-reverse"}`}>
+                {isMension && (
+                  <div className="w-6 h-6 rounded-full bg-lavender flex items-center justify-center shrink-0 mb-1">
+                    <span className="text-[10px]">🌙</span>
+                  </div>
+                )}
+                <div
+                  className={`rounded-[20px] px-4 py-3 text-[15px] leading-relaxed relative shadow-[0_2px_12px_rgba(107,79,160,0.06)] ${
+                    isMension
+                      ? "bg-mesh-lavender text-charcoal rounded-bl-sm border border-lavender/30"
+                      : "bg-mesh-butter text-charcoal rounded-br-sm border border-butter/30"
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap font-light">{msg.text}</p>
+                  <span className={`block text-[10px] opacity-0 group-hover:opacity-100 transition-opacity absolute ${isMension ? "-bottom-5 left-2" : "-bottom-5 right-2"} text-warm-gray/70 font-medium whitespace-nowrap`}>
+                    {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
               </div>
             </div>
           );
@@ -332,23 +339,23 @@ export default function OvaChat() {
           e.preventDefault();
           handleSendMessage(inputText);
         }}
-        className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-lavender shadow-sm shrink-0"
+        className="flex items-center gap-3 bg-white p-2 rounded-full shadow-[0_2px_16px_rgba(107,79,160,0.08)] shrink-0 border border-black/5 mt-4"
       >
         <input
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Share your thoughts or vent..."
+          placeholder="iMessage"
           disabled={isTyping}
-          className="flex-1 outline-none text-sm px-3 py-2 bg-transparent text-charcoal placeholder-warm-gray/60"
+          className="flex-1 outline-none text-[15px] px-4 py-2 bg-transparent text-charcoal placeholder-warm-gray/60 font-light"
         />
         <button
           type="submit"
           disabled={!inputText.trim() || isTyping}
-          className={`p-2.5 rounded-xl transition-all-300 shadow-sm flex items-center justify-center shrink-0 ${
+          className={`w-8 h-8 rounded-full transition-all-300 flex items-center justify-center shrink-0 mr-1 ${
             inputText.trim() && !isTyping
-              ? "bg-butter text-charcoal border border-butter-dark hover:scale-105"
-              : "bg-gray-50 text-gray-300 border border-gray-100 cursor-not-allowed"
+              ? "bg-lavender text-lavender-dark hover:scale-105"
+              : "bg-gray-50 text-gray-300 cursor-not-allowed"
           }`}
         >
           <SendHorizonal className="w-4 h-4" />

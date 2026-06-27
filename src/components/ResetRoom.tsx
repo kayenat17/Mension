@@ -1,236 +1,253 @@
 "use client";
 
 import React, { useState } from "react";
-import { Flame, Battery, Zap, BatteryCharging, CheckCircle, FlameKindling, Trash2 } from "lucide-react";
+import { BookOpen, ArrowRight, ArrowLeft, Play, CheckCircle2 } from "lucide-react";
+import MensionMonthly from "./MensionMonthly";
+import ArchitectureOfSilence from "./ArchitectureOfSilence";
+import WabiSabiThinking from "./WabiSabiThinking";
+import DigitalFastJournal from "./DigitalFastJournal";
 
-export default function ResetRoom() {
-  // --- ENERGY AUDIT STATE ---
-  const [selectedDrains, setSelectedDrains] = useState<string[]>([]);
-  const [selectedFuels, setSelectedFuels] = useState<string[]>([]);
-  const [batteryResult, setBatteryResult] = useState<{ percentage: number; prescription: string } | null>(null);
+export default function ResetRoom({ setActiveTab }: { setActiveTab?: (tab: string) => void }) {
+  const [isJournalOpen, setIsJournalOpen] = useState(false);
+  const [activeArticle, setActiveArticle] = useState<string | null>(null);
 
-  const drains = ["Work/Boss", "Overthinking", "Messy Room", "Group Chats", "Money Stress", "Socializing", "Bad Sleep"];
-  const fuels = ["Alone Time", "Good Snacks", "Deep Sleep", "Sunlight", "Pets", "Doing Nothing", "Hot Shower"];
+  if (activeArticle === 'architecture-of-silence') {
+    return <ArchitectureOfSilence onClose={() => setActiveArticle(null)} />;
+  }
+  if (activeArticle === 'wabi-sabi-thinking') {
+    return <WabiSabiThinking onClose={() => setActiveArticle(null)} />;
+  }
+  if (activeArticle === 'digital-fast-journal') {
+    return <DigitalFastJournal onClose={() => setActiveArticle(null)} />;
+  }
 
-  const toggleItem = (item: string, list: string[], setList: React.Dispatch<React.SetStateAction<string[]>>) => {
-    if (list.includes(item)) {
-      setList(list.filter(i => i !== item));
-    } else {
-      setList([...list, item]);
-    }
-    setBatteryResult(null); // Reset result when changing inputs
-  };
-
-  const calculateBattery = () => {
-    // Base battery 50%. Fuels add 10%, drains subtract 15% (drains are heavier).
-    let battery = 50 + (selectedFuels.length * 10) - (selectedDrains.length * 15);
-    battery = Math.max(0, Math.min(100, battery)); // Clamp between 0 and 100
-
-    let prescription = "";
-    if (battery <= 20) {
-      prescription = "Critical low battery. Cancel everything non-essential. Put your phone on DND, eat something comforting, and rot in bed. You have zero obligation to be productive right now.";
-    } else if (battery <= 50) {
-      prescription = "You're running on fumes. Do the bare minimum today and protect your peace tonight. A hot shower and early bedtime are mandatory.";
-    } else if (battery <= 80) {
-      prescription = "You're doing okay, but guard your energy! Don't overcommit just because you feel fine right now. Keep cruising.";
-    } else {
-      prescription = "Fully charged! You're thriving. Use this energy for something that brings you genuine joy, not just chores.";
-    }
-
-    setBatteryResult({ percentage: battery, prescription });
-  };
-
-  // --- BURN BOOK STATE ---
-  const [burnText, setBurnText] = useState("");
-  const [isBurning, setIsBurning] = useState(false);
-  const [burnComplete, setBurnComplete] = useState(false);
-
-  const handleIncinerate = () => {
-    if (!burnText.trim()) return;
-    
-    setIsBurning(true);
-    setBurnComplete(false);
-
-    // Simulate burning time
-    setTimeout(() => {
-      setIsBurning(false);
-      setBurnText("");
-      setBurnComplete(true);
-      
-      // Reset the complete message after a few seconds
-      setTimeout(() => {
-        setBurnComplete(false);
-      }, 5000);
-    }, 2000);
-  };
+  if (isJournalOpen) {
+    return (
+      <div className="absolute inset-0 bg-white z-50 overflow-y-auto animate-slide-up flex-1 w-full h-full">
+        <button 
+          onClick={() => setIsJournalOpen(false)} 
+          className="fixed top-6 left-6 z-[60] bg-white/80 backdrop-blur-md text-[#1A1A1A] px-4 py-2 rounded-full shadow-sm border border-purple-100 font-dm-sans font-bold text-sm flex items-center gap-2 hover:bg-white hover:shadow-md hover:-translate-y-0.5 transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Reset Room
+        </button>
+        <MensionMonthly />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 md:px-8 py-8 max-w-5xl mx-auto w-full space-y-12 animate-slide-up pb-24">
-      {/* Header Info */}
-      <section className="text-center space-y-3">
-        <h2 className="font-dm-sans font-bold text-3xl md:text-4xl text-charcoal flex items-center justify-center gap-3">
-          <Flame className="w-8 h-8 text-amber-500" />
-          The Reset Room
-        </h2>
-        <p className="text-sm text-warm-gray max-w-xl mx-auto font-medium">
-          Sometimes you don't need to logically reframe your thoughts. Sometimes you just need to check your battery, vent, and let it burn.
-        </p>
-      </section>
-
-      {/* SECTION 1: THE ENERGY AUDIT */}
-      <section className="glass-panel rounded-3xl p-6 md:p-8 border border-lavender bg-white/70 shadow-sm relative overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-32 h-32 bg-butter/30 rounded-full blur-2xl pointer-events-none"></div>
+    <div className="flex-1 overflow-y-auto w-full animate-slide-up bg-[#F9F8F6]">
+      {/* Container for main content (excluding full-bleed sections) */}
+      <div className="px-4 md:px-8 py-12 md:py-20 max-w-7xl mx-auto space-y-24">
         
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 rounded-xl bg-amber-50 text-amber-500 border border-amber-100">
-            <Battery className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="font-dm-sans font-bold text-xl text-charcoal">The Energy Audit</h3>
-            <p className="text-xs text-warm-gray font-medium">Quickly calculate your social battery and get Ova's evening prescription.</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Drains */}
-          <div className="space-y-3">
-            <h4 className="text-xs uppercase font-bold tracking-wider text-red-500 flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5" /> What's draining you today?
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {drains.map(item => (
-                <button
-                  key={item}
-                  onClick={() => toggleItem(item, selectedDrains, setSelectedDrains)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
-                    selectedDrains.includes(item) 
-                      ? "bg-red-100 border-red-200 text-red-700 shadow-sm scale-105" 
-                      : "bg-white border-lavender text-warm-gray hover:border-red-200 hover:text-red-500"
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
+        {/* HERO SECTION */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-pink-100 text-pink-600 rounded-full text-xs font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-pink-600"></span>
+              Volume 12: The Serene Issue
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-dm-sans font-bold text-charcoal tracking-tight leading-tight">
+              The <br /> Reset Room
+            </h1>
+            
+            <p className="text-lg text-warm-gray max-w-md font-light leading-relaxed">
+              A space to vent, decompress, and realign your center. Sometimes the most productive thing you can do is let it all out.
+            </p>
+            
+            <div className="flex flex-wrap items-center gap-4 pt-4">
+              <button 
+                onClick={() => setIsJournalOpen(true)}
+                className="px-8 py-4 bg-[#b31966] hover:bg-[#8c1350] text-white font-bold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+              >
+                Start Your Reset
+              </button>
+              <button 
+                onClick={() => document.getElementById('featured-stories')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-8 py-4 bg-butter hover:bg-butter-dark text-charcoal font-bold rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
+              >
+                Explore Stories
+              </button>
             </div>
           </div>
 
-          {/* Fuels */}
-          <div className="space-y-3">
-            <h4 className="text-xs uppercase font-bold tracking-wider text-emerald-500 flex items-center gap-1.5">
-              <BatteryCharging className="w-3.5 h-3.5" /> What's fueling you today?
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {fuels.map(item => (
-                <button
-                  key={item}
-                  onClick={() => toggleItem(item, selectedFuels, setSelectedFuels)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
-                    selectedFuels.includes(item) 
-                      ? "bg-emerald-100 border-emerald-200 text-emerald-700 shadow-sm scale-105" 
-                      : "bg-white border-lavender text-warm-gray hover:border-emerald-200 hover:text-emerald-500"
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+          {/* NOTEBOOK HERO IMAGE */}
+          <div className="flex justify-center lg:justify-end relative">
+             <div onClick={() => setIsJournalOpen(true)} className="relative group cursor-pointer w-full max-w-[320px] md:max-w-sm perspective-[1200px]">
+                {/* Stack of pages (thickness) */}
+                <div className="absolute top-3 left-6 right-[-12px] bottom-[-10px] bg-[#f0eae0] rounded-r-2xl border border-[#dcd6cc] shadow-lg transition-transform group-hover:translate-x-2 group-hover:translate-y-2 duration-500 ease-out z-0">
+                  <div className="absolute top-0 right-0 bottom-0 w-4 bg-[repeating-linear-gradient(transparent,transparent_3px,#e2dbd1_3px,#e2dbd1_4px)] opacity-60 rounded-r-2xl"></div>
+                </div>
 
-        <div className="mt-8 flex flex-col items-center border-t border-lavender/40 pt-6">
-          <button 
-            onClick={calculateBattery}
-            className="bg-charcoal text-white font-bold py-3 px-8 rounded-2xl hover:bg-charcoal/90 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-          >
-            Check Battery & Get Prescription
-          </button>
+                {/* Notebook Cover */}
+                <div className="relative z-10 w-full aspect-[3/4] bg-gradient-to-b from-[#e3eaec] via-[#a6b6c2] to-[#7559a3] rounded-l-md rounded-r-3xl shadow-2xl overflow-hidden transition-all duration-500 ease-out group-hover:-rotate-y-[4deg] origin-left border border-white/40 group-hover:shadow-3xl">
+                  {/* Glassmorphism ripple effect on cover - ethereal waves */}
+                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay opacity-50"></div>
+                  
+                  {/* Spine */}
+                  <div className="absolute top-0 bottom-0 left-0 w-8 bg-gradient-to-r from-black/20 via-transparent to-black/10 border-r border-white/20"></div>
+                  <div className="absolute top-0 bottom-0 left-6 w-px bg-black/10"></div>
 
-          {batteryResult && (
-            <div className="mt-6 w-full animate-slide-up bg-lavender-light/30 border border-lavender rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6">
-              {/* Battery Graphic */}
-              <div className="relative w-24 h-48 border-4 border-charcoal/20 rounded-xl overflow-hidden flex flex-col-reverse bg-white shadow-inner shrink-0">
-                <div 
-                  className={`w-full transition-all duration-1000 ease-out ${
-                    batteryResult.percentage <= 20 ? "bg-red-400" : batteryResult.percentage <= 50 ? "bg-amber-400" : "bg-emerald-400"
-                  }`}
-                  style={{ height: `${batteryResult.percentage}%` }}
-                ></div>
-                <div className="absolute inset-0 flex items-center justify-center font-dm-sans font-black text-2xl text-charcoal/80 mix-blend-overlay drop-shadow-md">
-                  {batteryResult.percentage}%
+                  {/* Cover Content */}
+                  <div className="absolute inset-0 flex flex-col justify-between items-center p-8 z-30 pt-16">
+                    <div className="text-center w-full">
+                      <h3 className="font-headline-lg font-bold text-5xl text-white tracking-tight mb-0 text-center drop-shadow-md">
+                        MENSION
+                      </h3>
+                      <p className="text-lg text-white font-medium tracking-[0.4em] uppercase drop-shadow-sm mt-1">
+                        Monthly
+                      </p>
+                    </div>
+                    
+                    <div className="text-center w-full">
+                      <p className="text-white font-serif italic text-2xl drop-shadow-md">The Serene Issue</p>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setIsJournalOpen(true); }}
+                        className="mt-6 w-12 h-12 bg-butter rounded-full flex items-center justify-center mx-auto shadow-lg hover:scale-110 transition-transform border border-white/20"
+                      >
+                        <ArrowRight className="w-5 h-5 text-charcoal" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
+          </div>
+        </section>
 
-              {/* Prescription Text */}
-              <div className="space-y-2 text-center md:text-left">
-                <div className="inline-block text-[10px] uppercase font-bold tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100 mb-1">
-                  Ova's Prescription
-                </div>
-                <p className="text-charcoal font-medium leading-relaxed text-sm md:text-base">
-                  {batteryResult.prescription}
-                </p>
-              </div>
+        {/* FEATURED STORIES SECTION */}
+        <section id="featured-stories" className="space-y-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-2 max-w-2xl">
+              <h2 className="text-3xl font-dm-sans font-bold text-charcoal tracking-tight">Featured Stories</h2>
+              <p className="text-warm-gray font-light">
+                Curated perspectives on maintaining clarity in a noisy world. Exploring the intersection of design, mindfulness, and the human experience.
+              </p>
             </div>
-          )}
-        </div>
-      </section>
-
-      {/* SECTION 2: THE RAGE ROOM / BURN BOOK */}
-      <section className="glass-panel rounded-3xl p-6 md:p-8 border border-red-100 bg-white/70 shadow-sm relative overflow-hidden">
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2.5 rounded-xl bg-red-50 text-red-500 border border-red-100">
-            <FlameKindling className="w-6 h-6" />
           </div>
-          <div>
-            <h3 className="font-dm-sans font-bold text-xl text-charcoal">The Burn Book</h3>
-            <p className="text-xs text-warm-gray font-medium">Type out whatever is frustrating you, and incinerate it.</p>
-          </div>
-        </div>
 
-        <div className="space-y-4 relative">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Story 1 */}
+            <div className="group cursor-pointer" onClick={() => setActiveArticle('architecture-of-silence')}>
+              <div className="w-full aspect-[4/5] rounded-3xl overflow-hidden mb-5 relative">
+                <img src="https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop" alt="Minimalist Interior" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              </div>
+              <p className="text-xs font-bold text-lavender-dark uppercase tracking-wider mb-2">Wellness</p>
+              <h3 className="text-xl font-bold text-charcoal mb-2 group-hover:text-lavender-dark transition-colors">The Architecture of Silence</h3>
+              <p className="text-sm text-warm-gray font-light leading-relaxed">How physical spaces influence our mental state and the power of minimalist environments.</p>
+            </div>
+            {/* Story 2 */}
+            <div className="group cursor-pointer" onClick={() => setActiveArticle('wabi-sabi-thinking')}>
+              <div className="w-full aspect-[4/5] rounded-3xl overflow-hidden mb-5 relative">
+                <img src="https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?q=80&w=800&auto=format&fit=crop" alt="Plant" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              </div>
+              <p className="text-xs font-bold text-lavender-dark uppercase tracking-wider mb-2">Perspective</p>
+              <h3 className="text-xl font-bold text-charcoal mb-2 group-hover:text-lavender-dark transition-colors">Wabi-Sabi Thinking</h3>
+              <p className="text-sm text-warm-gray font-light leading-relaxed">Embracing imperfection as a path to genuine inner peace and creative freedom.</p>
+            </div>
+            {/* Story 3 */}
+            <div className="group cursor-pointer" onClick={() => setActiveArticle('digital-fast-journal')}>
+              <div className="w-full aspect-[4/5] rounded-3xl overflow-hidden mb-5 relative">
+                <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=800&auto=format&fit=crop" alt="Forest path" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              </div>
+              <p className="text-xs font-bold text-lavender-dark uppercase tracking-wider mb-2">Daily Rituals</p>
+              <h3 className="text-xl font-bold text-charcoal mb-2 group-hover:text-lavender-dark transition-colors">The Digital Fast</h3>
+              <p className="text-sm text-warm-gray font-light leading-relaxed">Reclaiming your attention in the age of constant connection. A guide to offline presence.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* COMMUNITY VOICES (FULL BLEED) */}
+      <section className="w-full bg-[#E6E0F8] py-20">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <h2 className="text-3xl font-dm-sans font-bold text-charcoal text-center mb-12">Community Voices</h2>
           
-          {isBurning ? (
-            <div className="h-40 w-full bg-charcoal/5 rounded-2xl border-2 border-dashed border-red-300 flex items-center justify-center relative overflow-hidden">
-              {/* Fake fire effect using CSS */}
-              <div className="absolute bottom-0 w-full flex justify-center space-x-2 animate-pulse">
-                <div className="w-4 h-16 bg-red-500 rounded-full blur-sm animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                <div className="w-6 h-24 bg-orange-400 rounded-full blur-sm animate-bounce" style={{ animationDelay: "100ms" }}></div>
-                <div className="w-8 h-32 bg-amber-400 rounded-full blur-sm animate-bounce" style={{ animationDelay: "50ms" }}></div>
-                <div className="w-6 h-20 bg-orange-500 rounded-full blur-sm animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                <div className="w-4 h-12 bg-red-400 rounded-full blur-sm animate-bounce" style={{ animationDelay: "75ms" }}></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { text: "Finally a place where I don't have to be 'productive' about my mental health. Just letting it burn for a minute was exactly what I needed.", user: "@sarah_m", color: "bg-pink-600" },
+              { text: "The aesthetics alone are calming. It feels like stepping into a clean, quiet room after a long day in a crowded city.", user: "@jordan.1x", color: "bg-yellow-400" },
+              { text: "I used the Reset Room during a panic moment. The prompt was simple and didn't judge. Life saver.", user: "@chloe_k", color: "bg-purple-500" },
+              { text: "The editorial quality is top-notch. I came for the tools but stay for the articles. Truly premium experience.", user: "@elias_v", color: "bg-pink-200" }
+            ].map((quote, idx) => (
+              <div key={idx} className="bg-white rounded-[24px] p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <p className="text-charcoal/80 italic text-sm leading-relaxed mb-8">"{quote.text}"</p>
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full ${quote.color}`}></div>
+                  <span className="text-xs font-bold text-charcoal">{quote.user}</span>
+                </div>
               </div>
-              <span className="relative z-10 font-bold text-amber-700 tracking-widest uppercase text-xl">INCINERATING...</span>
-            </div>
-          ) : burnComplete ? (
-            <div className="h-40 w-full bg-emerald-50 rounded-2xl border border-emerald-200 flex flex-col items-center justify-center text-center space-y-2 animate-fade-in p-6">
-              <CheckCircle className="w-8 h-8 text-emerald-500" />
-              <p className="text-sm font-bold text-emerald-800">Done. It's ashes.</p>
-              <p className="text-xs text-emerald-600/80 font-medium">They don't deserve your energy anyway. Take a deep breath.</p>
-            </div>
-          ) : (
-            <>
-              <textarea
-                value={burnText}
-                onChange={(e) => setBurnText(e.target.value)}
-                placeholder="Type your intrusive thoughts, the angry text you shouldn't send, or whatever is weighing you down here..."
-                className="w-full h-40 rounded-2xl border border-red-200 bg-red-50/30 p-4 text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent resize-none placeholder-red-900/20"
-              />
-              <div className="flex justify-end">
-                <button
-                  onClick={handleIncinerate}
-                  disabled={!burnText.trim()}
-                  className="bg-red-500 hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Incinerate Thought
-                </button>
-              </div>
-            </>
-          )}
-
+            ))}
+          </div>
         </div>
       </section>
+
+      {/* DAILY CALM SECTION */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-20 md:py-32">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="w-full aspect-square rounded-[40px] overflow-hidden relative shadow-2xl group">
+            <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop" alt="Meditating" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+            {/* Gradient Overlay for bottom text */}
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 to-transparent pointer-events-none"></div>
+          </div>
+
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <p className="text-pink-600 font-bold text-xs uppercase tracking-widest">The Daily Calm</p>
+              <h2 className="text-5xl md:text-6xl font-dm-sans font-bold text-charcoal tracking-tight leading-tight">
+                Find your <br/> quiet center.
+              </h2>
+              <p className="text-lg text-warm-gray font-light max-w-md leading-relaxed pt-2">
+                Every day, we curate a single breath of fresh air. A guided meditation, a soundscape, or a simple breathing exercise designed to fit into your busy life.
+              </p>
+            </div>
+
+            <div className="space-y-6 pt-4">
+              <div className="flex gap-4">
+                <CheckCircle2 className="w-6 h-6 text-lavender-dark shrink-0" />
+                <div>
+                  <h4 className="font-bold text-charcoal text-sm mb-1">5-Minute Sessions</h4>
+                  <p className="text-xs text-warm-gray font-light">Optimized for busy schedules without compromising depth.</p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <CheckCircle2 className="w-6 h-6 text-lavender-dark shrink-0" />
+                <div>
+                  <h4 className="font-bold text-charcoal text-sm mb-1">Spatial Audio Soundscapes</h4>
+                  <p className="text-xs text-warm-gray font-light">Immerse yourself in nature recordings from around the globe.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6">
+              <button 
+                onClick={() => setActiveTab && setActiveTab('breathing')}
+                className="px-8 py-4 bg-lavender-dark hover:bg-[#523d7a] text-white font-bold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-3"
+              >
+                Try Calm Space
+                <div className="w-5 h-5 flex items-center justify-center border border-white/30 rounded-full">
+                  <Play className="w-2.5 h-2.5 fill-white" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* FOOTER (FULL BLEED) */}
+      <footer className="w-full bg-[#A8005A] py-24 text-center px-4">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <h2 className="text-4xl font-dm-sans font-bold text-white tracking-tight">Stay Centered</h2>
+          <p className="text-white/80 font-light text-sm md:text-base px-8 pb-6">
+            Get curated stories, research-backed wellness tips, and "The Reset Room" highlights delivered weekly.
+          </p>
+          <div className="inline-block px-8 py-4 bg-white/10 text-white rounded-full border border-white/20 backdrop-blur-sm shadow-inner cursor-default">
+            <p className="text-sm font-semibold tracking-wide uppercase flex items-center gap-2">
+              Newsletter Coming Soon <span className="text-xl">✨</span>
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
