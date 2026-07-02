@@ -18,9 +18,10 @@ export default function InteractivePortrait() {
 
   return (
     <div
-      className="relative w-full h-[500px] cursor-crosshair overflow-hidden group rounded-[48px]"
+      className="relative w-full h-[350px] md:h-[500px] cursor-crosshair overflow-hidden group rounded-[48px]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={() => setIsHovered(!isHovered)}
     >
       {/* Base Portrait Photo (Sticker Effect with mix-blend-multiply) */}
       <div className="absolute inset-0 overflow-hidden mix-blend-multiply">

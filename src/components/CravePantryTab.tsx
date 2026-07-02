@@ -7,11 +7,30 @@ export default function CravePantryTab() {
   const [userTz, setUserTz] = useState('');
 
   useEffect(() => {
-    try {
-      setUserTz(Intl.DateTimeFormat().resolvedOptions().timeZone || '');
-    } catch (e) {
-      console.warn("Timezone detection failed");
-    }
+    // Determine location by URL (IP geolocation)
+    const fetchLocation = async () => {
+      try {
+        const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.timezone) {
+            setUserTz(data.timezone);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("URL location discovery failed, falling back to local device timezone");
+      }
+      
+      // Fallback if URL location is not traced
+      try {
+        setUserTz(Intl.DateTimeFormat().resolvedOptions().timeZone || '');
+      } catch (e) {
+        console.warn("Timezone fallback failed");
+      }
+    };
+
+    fetchLocation();
     
     const savedPhase = localStorage.getItem('clara-current-phase');
     if (savedPhase && (savedPhase === 'menstrual' || savedPhase === 'follicular' || savedPhase === 'ovulation' || savedPhase === 'luteal')) {

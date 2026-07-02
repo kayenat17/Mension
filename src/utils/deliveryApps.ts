@@ -7,7 +7,7 @@ export function getDeliveryApps(productName: string, tz: string): DeliveryApp[] 
     return []; // Return empty if not yet loaded
   }
   
-  if (tz === 'Asia/Kolkata') {
+  if (tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') {
     return [
       { name: 'Blinkit 🟡', url: `https://blinkit.com/s/?q=${p}`, bgColor: 'bg-[#ffe24c]', textColor: 'text-[#211b00]', hoverBgColor: 'hover:bg-[#e2c62d]' },
       { name: 'Zepto 🟣', url: `https://www.zeptonow.com/search?query=${p}`, bgColor: 'bg-[#e9ddff]', textColor: 'text-[#23005c]', hoverBgColor: 'hover:bg-[#d0bcff]' },
@@ -21,7 +21,7 @@ export function getDeliveryApps(productName: string, tz: string): DeliveryApp[] 
       { name: 'Amazon Fresh 🔵', url: `https://www.amazon.com/s?k=${p}&i=amazonfresh`, bgColor: 'bg-[#e3f2fd]', textColor: 'text-[#1565c0]', hoverBgColor: 'hover:bg-[#bbdefb]' }
     ];
   }
-  if (tz === 'Europe/London') {
+  if (tz === 'Europe/London' || tz === 'Europe/Dublin') {
     return [
       { name: 'Deliveroo 🩵', url: `https://deliveroo.co.uk/search?q=${p}`, bgColor: 'bg-[#e0f7fa]', textColor: 'text-[#00838f]', hoverBgColor: 'hover:bg-[#b2ebf2]' },
       { name: 'Ocado 🟣', url: `https://www.ocado.com/search?entry=${p}`, bgColor: 'bg-[#f3e5f5]', textColor: 'text-[#6a1b9a]', hoverBgColor: 'hover:bg-[#e1bee7]' },
