@@ -76,7 +76,7 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
                   </div>
                   
                   <a 
-                    href="https://forms.gle/zNXXR7bK7PzyyRDa7" 
+                    href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center space-x-2 px-4 py-2.5 text-sm text-charcoal hover:bg-black/5 transition-colors"
@@ -187,7 +187,7 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
               {isAccountMenuOpen && (
                 <div className="absolute top-12 right-0 w-48 bg-white rounded-xl shadow-lg border border-black/5 py-2 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                   <a 
-                    href="https://forms.gle/zNXXR7bK7PzyyRDa7" 
+                    href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center space-x-2 px-4 py-2.5 text-sm text-charcoal hover:bg-black/5 transition-colors"
