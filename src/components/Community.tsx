@@ -385,7 +385,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
               </div>
             ) : (
               filteredPosts.map((post) => (
-                <article key={post.id} className="bg-surface-container-lowest border-2 border-primary rounded-xl p-5 md:p-8 bubbly-card">
+                <article key={post.id} className="bg-surface-container-lowest border-2 border-primary rounded-xl p-4 md:p-8 bubbly-card">
 
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-primary-fixed rounded-full flex items-center justify-center text-primary font-bold">
@@ -397,49 +397,49 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
                     </div>
                   </div>
 
-                  <p className="font-headline-md text-base md:text-[20px] leading-relaxed text-on-surface mb-5 md:mb-8 whitespace-pre-wrap">
+                  <p className="font-headline-md text-sm md:text-[20px] leading-relaxed text-on-surface mb-4 md:mb-8 whitespace-pre-wrap">
                     "{post.content}"
                   </p>
 
                   {/* Action Buttons styled like CycleCircle mockup */}
-                  <div className="flex flex-wrap gap-2 md:gap-4 pt-4 border-t border-outline-variant">
+                  <div className="flex flex-wrap sm:flex-nowrap justify-start gap-1.5 md:gap-4 pt-3 border-t border-outline-variant">
                     <button
                       onClick={() => handleReaction(post.id, "red_flag_count")}
                       disabled={!!reactedPosts[post.id] || !session}
-                      className={`flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 border-2 rounded-full transition-transform active:scale-95 ${reactedPosts[post.id] === "red_flag_count"
+                      className={`flex items-center justify-center gap-1 md:gap-2 px-2 py-1.5 md:px-4 md:py-2 border rounded-full transition-transform active:scale-95 flex-grow sm:flex-grow-0 ${reactedPosts[post.id] === "red_flag_count"
                           ? "bg-secondary-container border-primary scale-105"
                           : "bg-surface-container-lowest border-primary/20 hover:border-primary hover:bg-secondary-container/30"
                         } ${!session || reactedPosts[post.id] ? "opacity-90 cursor-not-allowed" : "cursor-pointer"}`}
                     >
-                      <span className={`material-symbols-outlined text-secondary text-sm md:text-lg ${reactedPosts[post.id] === 'red_flag_count' ? 'filled-icon' : ''}`}>flag</span>
-                      <span className="font-label-md text-xs md:text-sm text-secondary">Red Flag</span>
-                      <span className="bg-primary text-on-primary text-[10px] px-1.5 py-0.5 rounded-full ml-1 font-bold">{post.red_flag_count}</span>
+                      <span className={`material-symbols-outlined text-secondary text-[12px] md:text-lg ${reactedPosts[post.id] === 'red_flag_count' ? 'filled-icon' : ''}`}>flag</span>
+                      <span className="font-label-md text-[10px] md:text-sm text-secondary whitespace-nowrap">Red Flag</span>
+                      <span className="bg-primary text-on-primary text-[9px] px-1 py-0.5 rounded-full ml-0.5 font-bold">{post.red_flag_count}</span>
                     </button>
 
                     <button
                       onClick={() => handleReaction(post.id, "trust_gut_count")}
                       disabled={!!reactedPosts[post.id] || !session}
-                      className={`flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 border-2 rounded-full transition-transform active:scale-95 ${reactedPosts[post.id] === "trust_gut_count"
+                      className={`flex items-center justify-center gap-1 md:gap-2 px-2 py-1.5 md:px-4 md:py-2 border rounded-full transition-transform active:scale-95 flex-grow sm:flex-grow-0 ${reactedPosts[post.id] === "trust_gut_count"
                           ? "bg-tertiary-fixed border-primary scale-105"
                           : "bg-surface-container-lowest border-primary/20 hover:border-primary hover:bg-tertiary-fixed/30"
                         } ${!session || reactedPosts[post.id] ? "opacity-90 cursor-not-allowed" : "cursor-pointer"}`}
                     >
-                      <span className={`material-symbols-outlined text-tertiary text-sm md:text-lg ${reactedPosts[post.id] === 'trust_gut_count' ? 'filled-icon' : ''}`}>favorite</span>
-                      <span className="font-label-md text-xs md:text-sm text-tertiary">Trust your gut</span>
-                      <span className="bg-primary text-on-primary text-[10px] px-1.5 py-0.5 rounded-full ml-1 font-bold">{post.trust_gut_count}</span>
+                      <span className={`material-symbols-outlined text-tertiary text-[12px] md:text-lg ${reactedPosts[post.id] === 'trust_gut_count' ? 'filled-icon' : ''}`}>favorite</span>
+                      <span className="font-label-md text-[10px] md:text-sm text-tertiary whitespace-nowrap">Trust your gut</span>
+                      <span className="bg-primary text-on-primary text-[9px] px-1 py-0.5 rounded-full ml-0.5 font-bold">{post.trust_gut_count}</span>
                     </button>
 
                     <button
                       onClick={() => handleReaction(post.id, "give_time_count")}
                       disabled={!!reactedPosts[post.id] || !session}
-                      className={`flex items-center gap-1 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 border-2 rounded-full transition-transform active:scale-95 ${reactedPosts[post.id] === "give_time_count"
+                      className={`flex items-center justify-center gap-1 md:gap-2 px-2 py-1.5 md:px-4 md:py-2 border rounded-full transition-transform active:scale-95 flex-grow sm:flex-grow-0 ${reactedPosts[post.id] === "give_time_count"
                           ? "bg-primary-fixed border-primary scale-105"
                           : "bg-surface-container-lowest border-primary/20 hover:border-primary hover:bg-primary-fixed/30"
                         } ${!session || reactedPosts[post.id] ? "opacity-90 cursor-not-allowed" : "cursor-pointer"}`}
                     >
-                      <span className={`material-symbols-outlined text-primary text-sm md:text-lg ${reactedPosts[post.id] === 'give_time_count' ? 'filled-icon' : ''}`}>schedule</span>
-                      <span className="font-label-md text-xs md:text-sm text-primary">Give it time</span>
-                      <span className="bg-primary text-on-primary text-[10px] px-1.5 py-0.5 rounded-full ml-1 font-bold">{post.give_time_count}</span>
+                      <span className={`material-symbols-outlined text-primary text-[12px] md:text-lg ${reactedPosts[post.id] === 'give_time_count' ? 'filled-icon' : ''}`}>schedule</span>
+                      <span className="font-label-md text-[10px] md:text-sm text-primary whitespace-nowrap">Give it time</span>
+                      <span className="bg-primary text-on-primary text-[9px] px-1 py-0.5 rounded-full ml-0.5 font-bold">{post.give_time_count}</span>
                     </button>
                   </div>
 
