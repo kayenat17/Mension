@@ -16,7 +16,12 @@ export default function FeedbackBanner() {
         href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform" 
         target="_blank" 
         rel="noopener noreferrer"
-        className="px-6 py-3 rounded-full bg-primary hover:bg-primary-dark text-white font-bold transition-all shadow-md hover:shadow-lg active:scale-95 shrink-0"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          window.open("https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform", "_blank");
+        }}
+        className="px-6 py-3 rounded-full bg-primary hover:bg-primary-dark text-white font-bold transition-all shadow-md hover:shadow-lg active:scale-95 shrink-0 cursor-pointer block text-center"
       >
         Share Feedback
       </a>

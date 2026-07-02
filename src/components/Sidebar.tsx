@@ -72,7 +72,12 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
                       href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center space-x-2 px-4 py-2.5 text-sm text-charcoal hover:bg-black/5 transition-colors relative z-10"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.open("https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform", "_blank");
+                      }}
+                      className="flex items-center space-x-2 px-4 py-2.5 text-sm text-charcoal hover:bg-black/5 transition-colors relative z-10 cursor-pointer"
                     >
                       <MessageSquare className="w-4 h-4 text-primary" />
                       <span>Send Feedback</span>

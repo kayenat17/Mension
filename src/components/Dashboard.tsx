@@ -1084,12 +1084,28 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                 </div>
                 <div id="result-container" className="lg:col-span-6 relative bg-surface-bright flex flex-col">
                   {!analysisResult && !isAnalyzing ? (
-                    <div id="result-empty" className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-6">
+                    <div id="result-empty" className="flex-1 flex flex-col items-center justify-center p-8 md:p-12 space-y-8 text-center">
                       <div className="w-20 h-20 rounded-full bg-lavender/20 flex items-center justify-center">
                         <span className="material-symbols-outlined text-lavender text-4xl">psychology</span>
                       </div>
-                      <h3 className="font-serif text-2xl font-bold">Waiting for input</h3>
-                      <p className="text-sm text-on-surface/40 max-w-xs mx-auto">Complete the steps on the left to unlock Ova's deep empathetic analysis.</p>
+                      <h3 className="font-serif text-3xl font-bold">How the Analyzer Works</h3>
+                      
+                      <div className="bg-white/60 p-6 md:p-8 rounded-3xl border border-black/5 shadow-sm max-w-md text-left space-y-5">
+                        <div className="flex gap-4 items-start">
+                          <div className="w-8 h-8 shrink-0 rounded-full bg-butter flex items-center justify-center font-bold text-charcoal">1</div>
+                          <p className="text-sm text-charcoal/80 pt-1"><strong>Paste the Message:</strong> Drop in any text, email, or DM that left you feeling confused, anxious, or hurt.</p>
+                        </div>
+                        <div className="flex gap-4 items-start">
+                          <div className="w-8 h-8 shrink-0 rounded-full bg-lavender flex items-center justify-center font-bold text-charcoal">2</div>
+                          <p className="text-sm text-charcoal/80 pt-1"><strong>Identify the Sender:</strong> Tell us who it's from (e.g., Boss, Boyfriend) to help Ova understand the dynamic.</p>
+                        </div>
+                        <div className="flex gap-4 items-start">
+                          <div className="w-8 h-8 shrink-0 rounded-full bg-emerald-200 flex items-center justify-center font-bold text-charcoal">3</div>
+                          <p className="text-sm text-charcoal/80 pt-1"><strong>Reveal Clarity:</strong> Ova will analyze the hidden subtext, validate your feelings, and give you objective clarity based on your current cycle phase.</p>
+                        </div>
+                      </div>
+                      
+                      <p className="text-xs text-on-surface/40 font-medium uppercase tracking-widest mt-4">Complete the steps on the left to begin</p>
                     </div>
                   ) : isAnalyzing ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-6 animate-pulse-slow">
@@ -1521,6 +1537,11 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                   href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.open("https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform", "_blank");
+                  }}
                   className="px-10 py-5 bg-white text-charcoal border-2 border-charcoal rounded-full font-bold uppercase tracking-widest text-sm hover:bg-charcoal/5 transition-all shadow-lg w-full sm:w-auto text-center flex items-center justify-center gap-2"
                 >
                   <Heart className="w-4 h-4 text-hotpink" />
