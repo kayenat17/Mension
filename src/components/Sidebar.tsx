@@ -80,7 +80,6 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center space-x-2 px-4 py-2.5 text-sm text-charcoal hover:bg-black/5 transition-colors"
-                    onClick={() => setIsAccountMenuOpen(false)}
                   >
                     <MessageSquare className="w-4 h-4 text-primary" />
                     <span>Send Feedback</span>
@@ -191,7 +190,6 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center space-x-2 px-4 py-2.5 text-sm text-charcoal hover:bg-black/5 transition-colors"
-                    onClick={() => setIsAccountMenuOpen(false)}
                   >
                     <MessageSquare className="w-4 h-4 text-primary" />
                     <span>Send Feedback</span>
