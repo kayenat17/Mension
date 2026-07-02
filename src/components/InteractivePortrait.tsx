@@ -18,7 +18,7 @@ export default function InteractivePortrait() {
 
   return (
     <div
-      className="relative w-full max-w-sm aspect-square mx-auto cursor-crosshair overflow-visible group"
+      className="relative w-full h-[500px] cursor-crosshair overflow-hidden group rounded-[48px]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

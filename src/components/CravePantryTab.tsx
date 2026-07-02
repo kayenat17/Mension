@@ -13,7 +13,7 @@ export default function CravePantryTab() {
       console.warn("Timezone detection failed");
     }
     
-    const savedPhase = localStorage.getItem('clara-current-phase');
+    const savedPhase = localStorage.getItem('ova-current-phase');
     if (savedPhase && (savedPhase === 'menstrual' || savedPhase === 'follicular' || savedPhase === 'ovulation' || savedPhase === 'luteal')) {
       setCurrentPhase(savedPhase);
     }

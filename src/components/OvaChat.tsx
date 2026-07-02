@@ -5,7 +5,7 @@ import { HeartHandshake, AlertCircle, SendHorizonal, Activity, HelpCircle } from
 
 interface Message {
   id: string;
-  sender: "user" | "clara";
+  sender: "user" | "ova";
   text: string;
   timestamp: Date;
 }
@@ -28,7 +28,7 @@ export default function OvaChat() {
   // Initial setup and health check
   useEffect(() => {
     // Load cycle phase preference
-    const savedPhase = localStorage.getItem("clara-cycle-phase");
+    const savedPhase = localStorage.getItem("ova-cycle-phase");
     if (savedPhase) {
       setCyclePhase(savedPhase);
     }
@@ -52,7 +52,7 @@ export default function OvaChat() {
       });
 
     // Load Chat History
-    const savedChat = localStorage.getItem("clara-chat-history");
+    const savedChat = localStorage.getItem("ova-chat-history");
     if (savedChat) {
       const parsed = JSON.parse(savedChat);
       const formatted = parsed.map((m: any) => ({
@@ -64,7 +64,7 @@ export default function OvaChat() {
       setMessages([
         {
           id: "welcome",
-          sender: "clara",
+          sender: "ova",
           text: "Hey sweet friend! 🌸 Pull up a chair and make yourself comfortable. How are you really doing today? I'm here to listen, vent, or help you figure things out—no judgment, ever.",
           timestamp: new Date(),
         },
@@ -75,7 +75,7 @@ export default function OvaChat() {
   // Save chat history
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem("clara-chat-history", JSON.stringify(messages));
+      localStorage.setItem("ova-chat-history", JSON.stringify(messages));
     }
   }, [messages]);
 
@@ -119,13 +119,13 @@ export default function OvaChat() {
       })
       .then((data) => {
         setIsOfflineMode(false);
-        const claraMsg: Message = {
+        const ovaMsg: Message = {
           id: Math.random().toString(36).substring(2, 9),
-          sender: "clara",
+          sender: "ova",
           text: data.response,
           timestamp: new Date(),
         };
-        setMessages((prev) => [...prev, claraMsg]);
+        setMessages((prev) => [...prev, ovaMsg]);
         setIsTyping(false);
       })
       .catch((err) => {
@@ -135,13 +135,13 @@ export default function OvaChat() {
 
         setTimeout(() => {
           const responseText = getMensionFallbackResponse(text);
-          const claraMsg: Message = {
+          const ovaMsg: Message = {
             id: Math.random().toString(36).substring(2, 9),
-            sender: "clara",
+            sender: "ova",
             text: responseText,
             timestamp: new Date(),
           };
-          setMessages((prev) => [...prev, claraMsg]);
+          setMessages((prev) => [...prev, ovaMsg]);
           setIsTyping(false);
         }, 1200);
       });
@@ -172,7 +172,7 @@ export default function OvaChat() {
       return "Oh my gosh, yay! 🎉 I am absolutely thrilled for you! Let's pause and soak this in. We so often rush to the next challenge without celebrating our wins. \n\nTaking a moment to feel proud actually rewires your brain's dopamine pathways (we call it 'savoring' in positive psychology!). Tell me more—how does it feel to see your effort pay off? You earned this moment!";
     }
 
-    if (contains(["anxious", "anxiety", "panic", "scared", "fear", "worry", "worried"])) {
+    if (contains(["anxious", "anxiety", "panic", "scared", "ova", "worry", "worried"])) {
       return "I hear you, and it's okay that you're feeling anxious. Anxiety is just your body's alarm system misfiring. You are safe right now, in this space, with me. \n\nLet's try a quick grounding exercise: find 3 things in your room that are yellow or lavender, and touch them. Focus on their texture. Take a slow inhale... and a long exhale. I'm right here with you. Do you want to talk about what triggered it, or should we just keep breathing?" + cycleNote;
     }
 
@@ -180,7 +180,7 @@ export default function OvaChat() {
       return "I'm sending you the biggest virtual hug. 🤍 It is completely okay to cry and feel heavy. Emotions are like waves—they peak, they feel like they might crush us, but they always, always recede if we let them wash through us. \n\nYou don't have to 'fix' this sadness right this second. Just wrap yourself in a warm blanket, have a sip of water, and know that you are not alone. I am here, and I'm listening." + cycleNote;
     }
 
-    if (contains(["hello", "hi", "hey", "clara"])) {
+    if (contains(["hello", "hi", "hey", "ova"])) {
       return "Hi there! It's always so good to hear from you. 🌸 What's on your mind today? Are we venting, looking for a psychology reframe, or just having a chat?";
     }
 
@@ -199,12 +199,12 @@ export default function OvaChat() {
       setMessages([
         {
           id: "welcome",
-          sender: "clara",
+          sender: "ova",
           text: "Hey sweet friend! 🌸 We're starting fresh. How can I support you today?",
           timestamp: new Date(),
         },
       ]);
-      localStorage.removeItem("clara-chat-history");
+      localStorage.removeItem("ova-chat-history");
     }
   };
 
@@ -236,7 +236,7 @@ export default function OvaChat() {
               value={cyclePhase}
               onChange={(e) => {
                 setCyclePhase(e.target.value);
-                localStorage.setItem("clara-cycle-phase", e.target.value);
+                localStorage.setItem("ova-cycle-phase", e.target.value);
               }}
               className="text-xs bg-lavender-light border border-lavender rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-lavender-dark text-charcoal font-semibold"
             >
@@ -269,7 +269,7 @@ export default function OvaChat() {
       {/* Messages Window */}
       <div className="flex-1 overflow-y-auto py-6 space-y-4 px-2">
         {messages.map((msg) => {
-          const isMension = msg.sender === "clara";
+          const isMension = msg.sender === "ova";
           return (
             <div
               key={msg.id}

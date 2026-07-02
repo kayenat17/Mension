@@ -20,7 +20,7 @@ export default function BreathingPacer() {
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [secondsRemaining, setSecondsRemaining] = useState(4);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const [isDrawingModalOpen, setIsDrawingModalOpen] = useState(false);
 
   // --- BURN BOOK / INCINERATOR STATE ---
@@ -110,7 +110,7 @@ export default function BreathingPacer() {
   // WebGL Shader Effect for Incinerator
   useEffect(() => {
     if (!showShader) return;
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const gl = canvas.getContext('webgl');
@@ -118,6 +118,7 @@ export default function BreathingPacer() {
 
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
+    gl.viewport(0, 0, canvas.width, canvas.height);
 
     const vertexShaderSource = `
       attribute vec2 position;
@@ -227,11 +228,11 @@ export default function BreathingPacer() {
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
       -1.0, -1.0,
-       1.0, -1.0,
-      -1.0,  1.0,
-      -1.0,  1.0,
-       1.0, -1.0,
-       1.0,  1.0,
+      1.0, -1.0,
+      -1.0, 1.0,
+      -1.0, 1.0,
+      1.0, -1.0,
+      1.0, 1.0,
     ]), gl.STATIC_DRAW);
 
     const positionLocation = gl.getAttribLocation(program, "position");
@@ -265,13 +266,13 @@ export default function BreathingPacer() {
   const handleIncinerate = () => {
     setIsBurning(true);
     setShowShader(true);
-    
+
     // Play crackle sound
     try {
       const audio = new Audio("https://cdn.pixabay.com/audio/2022/02/11/audio_1cd613cf5d.mp3"); // Fire crackle
       audio.volume = 0.5;
       audio.play().catch(e => console.log("Audio play failed:", e));
-    } catch(e) {}
+    } catch (e) { }
 
     // Animate intensity
     intensityRef.current = 0.0;
@@ -299,7 +300,8 @@ export default function BreathingPacer() {
 
   return (
     <div className="bg-[#fdf8ff] text-[#1c1b21] font-sans min-h-screen flex flex-col overflow-x-hidden relative pb-32">
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .glass-card {
             background: rgba(255, 255, 255, 0.4);
             backdrop-filter: blur(16px);
@@ -373,11 +375,11 @@ export default function BreathingPacer() {
 
       {/* Background Blobs */}
       <div className="calm-blob w-96 h-96 bg-[#cbbeff] rounded-full top-[-10%] left-[-5%]"></div>
-      <div className="calm-blob w-[500px] h-[500px] bg-[#ffd9e2] rounded-full bottom-[-10%] right-[-5%]" style={{animationDelay: "-5s"}}></div>
-      <div className="calm-blob w-80 h-80 bg-[#ede4a3] rounded-full top-[40%] right-[10%]" style={{animationDelay: "-10s"}}></div>
+      <div className="calm-blob w-[500px] h-[500px] bg-[#ffd9e2] rounded-full bottom-[-10%] right-[-5%]" style={{ animationDelay: "-5s" }}></div>
+      <div className="calm-blob w-80 h-80 bg-[#ede4a3] rounded-full top-[40%] right-[10%]" style={{ animationDelay: "-10s" }}></div>
 
       <main className="flex-grow pt-8 md:pt-12 px-4 md:px-16 max-w-[1440px] mx-auto w-full relative z-10 space-y-8">
-        
+
         {/* Hero Section */}
         <section className="text-center mb-12">
           <div className="inline-flex items-center justify-center space-x-4 mb-4 bg-white/40 p-4 rounded-3xl backdrop-blur-sm border border-white/50">
@@ -391,14 +393,14 @@ export default function BreathingPacer() {
 
         {/* Row 1: Breathing & Grounding */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
-          
+
           {/* Left Column: Breathing Exercise */}
           <div className="lg:col-span-5">
             <div className="glass-card rounded-[32px] p-8 md:p-10 glow-lavender h-full flex flex-col items-center">
               {/* Tab Switcher */}
               <div className="flex p-1.5 bg-[#f1ecf5]/50 rounded-full mb-12 w-full">
                 {(["box", "relax", "equal"] as BreathingStyle[]).map(style => (
-                  <button 
+                  <button
                     key={style}
                     onClick={() => handleStyleChange(style)}
                     className={`flex-1 py-3 rounded-full font-bold text-sm transition-all capitalize ${breathingStyle === style ? 'bg-white shadow-md text-[#614eb2]' : 'text-[#484552] hover:bg-white/40'}`}
@@ -424,7 +426,7 @@ export default function BreathingPacer() {
 
               {/* Actions */}
               <div className="flex items-center space-x-6 mt-4 w-full">
-                <button 
+                <button
                   onClick={togglePlay}
                   className="flex-grow bg-[#b90760] text-white py-5 rounded-3xl font-extrabold flex items-center justify-center space-x-3 text-lg btn-pink-shadow transition-all"
                 >
@@ -459,7 +461,7 @@ export default function BreathingPacer() {
                     <span className="font-serif text-xl text-[#1c1b21] font-semibold">5 things you see</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                    {[1, 2, 3, 4, 5].map(i => <input key={i} className="bg-[#fdf8ff]/50 border-2 border-transparent rounded-2xl text-center font-bold focus:ring-4 focus:ring-[#9d8af2] focus:border-[#9d8af2] p-2.5 text-[#484552] placeholder:text-[#c9c4d4]" placeholder={`#${i}`} type="text"/>)}
+                    {[1, 2, 3, 4, 5].map(i => <input key={i} className="bg-[#fdf8ff]/50 border-2 border-transparent rounded-2xl text-center font-bold focus:ring-4 focus:ring-[#9d8af2] focus:border-[#9d8af2] p-2.5 text-[#484552] placeholder:text-[#c9c4d4]" placeholder={`#${i}`} type="text" />)}
                   </div>
                 </div>
 
@@ -470,7 +472,7 @@ export default function BreathingPacer() {
                     <span className="font-serif text-xl text-[#1c1b21] font-semibold">4 things you feel</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[1, 2, 3, 4].map(i => <input key={i} className="bg-[#fdf8ff]/50 border-2 border-transparent rounded-2xl text-center font-bold focus:ring-4 focus:ring-[#ff5f9b] focus:border-[#ff5f9b] p-2.5 text-[#484552] placeholder:text-[#c9c4d4]" placeholder={`#${i}`} type="text"/>)}
+                    {[1, 2, 3, 4].map(i => <input key={i} className="bg-[#fdf8ff]/50 border-2 border-transparent rounded-2xl text-center font-bold focus:ring-4 focus:ring-[#ff5f9b] focus:border-[#ff5f9b] p-2.5 text-[#484552] placeholder:text-[#c9c4d4]" placeholder={`#${i}`} type="text" />)}
                   </div>
                 </div>
 
@@ -482,7 +484,7 @@ export default function BreathingPacer() {
                       <span className="font-serif text-md text-[#1c1b21] font-semibold">3 Sounds</span>
                     </div>
                     <div className="space-y-1.5">
-                      {[1, 2, 3].map(i => <input key={i} className="w-full bg-[#fdf8ff]/40 border-none rounded-xl font-bold p-2 text-xs" placeholder={`#${i}`} type="text"/>)}
+                      {[1, 2, 3].map(i => <input key={i} className="w-full bg-[#fdf8ff]/40 border-none rounded-xl font-bold p-2 text-xs" placeholder={`#${i}`} type="text" />)}
                     </div>
                   </div>
 
@@ -492,7 +494,7 @@ export default function BreathingPacer() {
                       <span className="font-serif text-md text-[#1c1b21] font-semibold">2 Smells</span>
                     </div>
                     <div className="space-y-1.5">
-                      {[1, 2].map(i => <input key={i} className="w-full bg-[#fdf8ff]/40 border-none rounded-xl font-bold p-2 text-xs" placeholder={`#${i}`} type="text"/>)}
+                      {[1, 2].map(i => <input key={i} className="w-full bg-[#fdf8ff]/40 border-none rounded-xl font-bold p-2 text-xs" placeholder={`#${i}`} type="text" />)}
                     </div>
                   </div>
 
@@ -501,7 +503,7 @@ export default function BreathingPacer() {
                       <div className="w-8 h-8 rounded-xl bg-[#ffd9e2] flex items-center justify-center text-lg">👅</div>
                       <span className="font-serif text-md text-[#1c1b21] font-semibold">1 Taste</span>
                     </div>
-                    <input className="w-full flex-grow bg-[#fdf8ff]/40 border-none rounded-xl font-bold p-2 text-xs" placeholder="Sweet?" type="text"/>
+                    <input className="w-full flex-grow bg-[#fdf8ff]/40 border-none rounded-xl font-bold p-2 text-xs" placeholder="Sweet?" type="text" />
                   </div>
                 </div>
               </div>
@@ -512,7 +514,7 @@ export default function BreathingPacer() {
 
         {/* Row 2: Mood Mural & Vibe Radio */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
-          
+
           {/* Mood Mural (Canvas) */}
           <div className="lg:col-span-8">
             <div className="glass-card rounded-[32px] p-8 md:p-10 glow-yellow relative overflow-hidden h-full group">
@@ -522,10 +524,10 @@ export default function BreathingPacer() {
                   <h2 className="font-serif italic text-3xl font-bold text-[#1c1b21]">Mood Mural</h2>
                 </div>
                 <p className="font-sans text-[#484552] font-medium mb-8 max-w-md">Paint your feelings. A digital canvas for abstract expression when words aren't enough.</p>
-                
+
                 <div className="flex-grow w-full rounded-3xl mural-gradient border-4 border-white/80 shadow-2xl relative overflow-hidden flex items-center justify-center">
                   <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=800&auto=format&fit=crop')" }}></div>
-                  <button 
+                  <button
                     onClick={() => setIsDrawingModalOpen(true)}
                     className="relative z-10 bg-white/90 backdrop-blur-md text-[#1c1b21] font-bold px-10 py-4 rounded-full shadow-xl hover:scale-105 transition-transform flex items-center space-x-2"
                   >
@@ -555,8 +557,8 @@ export default function BreathingPacer() {
           </div>
 
           <div className="relative z-30 w-full max-w-4xl flex flex-col items-center p-6 py-12">
-            
-            <div 
+
+            <div
               className={`w-full bg-[#fdfcf0] shadow-[12px_12px_0_0_rgba(0,0,0,0.6)] p-8 md:p-12 rotate-[-1deg] relative overflow-hidden group border-x border-[#755564]/30 z-40 ${isBurning ? 'is-burning' : ''}`}
               style={{ backgroundImage: "repeating-linear-gradient(#fdfcf0 0px, #fdfcf0 31px, #e3bdc7 32px)", backgroundSize: "100% 32px" }}
             >
@@ -568,7 +570,7 @@ export default function BreathingPacer() {
 
               {/* Text Area */}
               <div className="relative w-full z-10">
-                <textarea 
+                <textarea
                   value={burnText}
                   onChange={(e) => setBurnText(e.target.value)}
                   placeholder="Type your intrusive thoughts, the angry text you shouldn't send, or whatever is weighing you down here..."
@@ -580,24 +582,22 @@ export default function BreathingPacer() {
 
               {/* Action Button */}
               <div className="mt-8 flex flex-col items-center gap-4 relative z-10">
-                <button 
+                <button
                   onClick={handleIncinerate}
                   disabled={isBurning || !burnText.trim()}
                   className="group relative px-8 py-4 bg-[#b90068] text-white font-serif text-xl font-bold uppercase tracking-tighter shadow-[6px_6px_0_0_rgba(0,0,0,1)] hover:shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 transition-all active:scale-95 rotate-[1deg] disabled:opacity-50 disabled:pointer-events-none"
                 >
                   <span className="relative z-10 flex items-center gap-2">
                     INCINERATE
-                    <span className="material-symbols-outlined burn-effect">local_fire_department</span>
                   </span>
                 </button>
-                <span className="font-sans text-[10px] text-[#755564] font-bold uppercase animate-pulse">Destructive action permanent</span>
               </div>
             </div>
           </div>
         </section>
 
       </main>
-      
+
       {isDrawingModalOpen && (
         <DrawingCanvasModal onClose={() => setIsDrawingModalOpen(false)} />
       )}

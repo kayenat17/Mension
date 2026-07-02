@@ -1,1 +1,0 @@
-"# Crave Pantry Implementation Tasks\n\n- [/] Create `CravePantrySection` component for the Dashboard\n- [ ] Modify `Dashboard.tsx` to include `CravePantrySection` below the analyzer\n- [ ] Create `CravePantryTab` component for the full-page view\n- [ ] Modify `page.tsx` to handle the `crave-pantry` tab\n- [ ] Modify `Sidebar.tsx` to include the \"Crave Pantry\" navigation item"

@@ -44,7 +44,17 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
 
   // Period Tracker States
   // Period Tracker States
-  const [cycleData, setCycleData] = useState<CycleData | null>(null);
+  const [cycleData, setCycleData] = useState<CycleData | null>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("ova-cycle-tracker");
+      if (stored) {
+        try { return JSON.parse(stored); } catch (e) { }
+      }
+    }
+    const d = new Date();
+    d.setDate(d.getDate() - 14);
+    return { lmp: d.toISOString().split("T")[0], cycleLength: 28, periodDuration: 5 };
+  });
   const [cycleLogs, setCycleLogs] = useState<CycleLog[]>([]);
   const [isCycleDelayed, setIsCycleDelayed] = useState(false);
   const [cycleIrregularity, setCycleIrregularity] = useState<string | null>(null);
@@ -55,6 +65,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [showCycleCalendar, setShowCycleCalendar] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+  const [pendingLogDate, setPendingLogDate] = useState<Date | null>(null);
 
   // Pattern summary states
   const [patternSummaries, setPatternSummaries] = useState<Record<string, string>>({});
@@ -114,34 +125,49 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   };
 
   const loadCycleLogs = async () => {
-    if (!session || !isSupabaseConfigured()) return;
-    
+    let dataToUse: CycleLog[] = [];
+
     try {
-      const { data, error } = await supabase
-        .from('cycle_logs')
-        .select('*')
-        .order('start_date', { ascending: false });
-        
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setCycleLogs(data);
-        
+      if (session && isSupabaseConfigured()) {
+        const { data, error } = await supabase
+          .from('cycle_logs')
+          .select('*')
+          .order('start_date', { ascending: false });
+
+        if (error) throw error;
+        if (data) dataToUse = data;
+      }
+
+      if (dataToUse.length === 0) {
+        // Fallback to local logs array if Supabase failed or empty
+        const storedLogs = localStorage.getItem("ova-cycle-logs");
+        if (storedLogs) {
+          try {
+            dataToUse = JSON.parse(storedLogs);
+          } catch (e) { }
+        }
+      }
+
+      if (dataToUse.length > 0) {
+        setCycleLogs(dataToUse);
+
         // Calculate average cycle length
         let avgLength = 28;
         let irregularCheck: string | null = null;
-        if (data.length >= 2) {
+        if (dataToUse.length >= 2) {
           let totalDays = 0;
           let daysList: number[] = [];
-          for (let i = 0; i < data.length - 1; i++) {
-            const d1 = new Date(data[i].start_date);
-            const d2 = new Date(data[i+1].start_date);
-            const diff = Math.round((d1.getTime() - d2.getTime()) / (1000 * 3600 * 24));
+          for (let i = 0; i < dataToUse.length - 1; i++) {
+            const [y1, m1, d1] = dataToUse[i].start_date.split('-');
+            const [y2, m2, d2] = dataToUse[i + 1].start_date.split('-');
+            const date1 = new Date(parseInt(y1), parseInt(m1) - 1, parseInt(d1));
+            const date2 = new Date(parseInt(y2), parseInt(m2) - 1, parseInt(d2));
+            const diff = Math.round((date1.getTime() - date2.getTime()) / (1000 * 3600 * 24));
             totalDays += diff;
             daysList.push(diff);
           }
-          avgLength = Math.round(totalDays / (data.length - 1));
-          
+          avgLength = Math.round(totalDays / (dataToUse.length - 1));
+
           const maxCycle = Math.max(...daysList);
           const minCycle = Math.min(...daysList);
           if (avgLength > 38 || maxCycle >= 40) {
@@ -153,18 +179,63 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
           }
         }
         setCycleIrregularity(irregularCheck);
-        
+
         // Ensure minimum 21, maximum 35 logic for UI dial stability
         avgLength = Math.max(21, Math.min(35, avgLength));
-        
-        const latestLmp = data[0].start_date;
+
+        const latestLmp = dataToUse[0].start_date;
         setCycleData({ lmp: latestLmp, cycleLength: avgLength, periodDuration: 5 });
         setCalendarMonth(new Date(latestLmp));
         setLmpInput(latestLmp);
         // We do NOT set isEditingCycle(false) here, letting the user manually close the setup when they are done.
+
       } else {
-        setCycleData(null);
-        setCycleLogs([]);
+        // Fallback for offline / missing Supabase: load array of past logs
+        const storedLogs = localStorage.getItem("ova-cycle-logs");
+        if (storedLogs) {
+          try {
+            const parsedLogs = JSON.parse(storedLogs);
+            if (parsedLogs && parsedLogs.length > 0) {
+              setCycleLogs(parsedLogs);
+              const latestLmp = parsedLogs[0].start_date;
+              setCalendarMonth(new Date(latestLmp));
+              setLmpInput(latestLmp);
+              return;
+            }
+          } catch (e) { }
+        }
+
+        // If there's no data in Supabase, but we have local single cycle data, push it to Supabase
+        const stored = localStorage.getItem("ova-cycle-tracker");
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed.lmp) {
+              if (session) {
+                await supabase.from('cycle_logs').insert({
+                  user_id: session.user.id,
+                  start_date: parsed.lmp
+                });
+                // Reload to update state from DB
+                const { data: newData, error: newError } = await supabase
+                  .from('cycle_logs')
+                  .select('*')
+                  .order('start_date', { ascending: false });
+
+                if (!newError && newData && newData.length > 0) {
+                  setCycleLogs(newData);
+                  setCycleData({ lmp: parsed.lmp, cycleLength: parsed.cycleLength || 28, periodDuration: parsed.periodDuration || 5 });
+                  setCalendarMonth(new Date(parsed.lmp));
+                  setLmpInput(parsed.lmp);
+                  return;
+                }
+              } else {
+                setCycleLogs([{ id: 'local-1', start_date: parsed.lmp }]);
+              }
+            }
+          } catch (e) { }
+        }
+
         setCycleIrregularity(null);
         setLmpInput("");
       }
@@ -177,12 +248,12 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
     if (session) {
       loadCycleLogs();
     } else {
-      setCycleData(null);
+
       setCycleLogs([]);
     }
 
     // Load logged symptoms
-    const savedSymptoms = localStorage.getItem("clara-logged-symptoms");
+    const savedSymptoms = localStorage.getItem("ova-logged-symptoms");
     if (savedSymptoms) {
       try {
         setSelectedSymptoms(JSON.parse(savedSymptoms));
@@ -196,7 +267,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
 
   // Persist symptoms when changed
   useEffect(() => {
-    localStorage.setItem("clara-logged-symptoms", JSON.stringify(selectedSymptoms));
+    localStorage.setItem("ova-logged-symptoms", JSON.stringify(selectedSymptoms));
   }, [selectedSymptoms]);
 
   const phaseVisuals = {
@@ -276,7 +347,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
     const month = date.getMonth();
     const firstDayIndex = new Date(year, month, 1).getDay();
     const totalDays = new Date(year, month + 1, 0).getDate();
-    
+
     // Previous month's trailing days
     const prevMonthDays = [];
     const prevMonthTotalDays = new Date(year, month, 0).getDate();
@@ -287,7 +358,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         date: new Date(year, month - 1, prevMonthTotalDays - i)
       });
     }
-    
+
     // Current month's days
     const currentMonthDays = [];
     for (let i = 1; i <= totalDays; i++) {
@@ -297,7 +368,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         date: new Date(year, month, i)
       });
     }
-    
+
     // Next month's leading days to fill up 6 rows (42 cells)
     const nextMonthDays = [];
     const remainingCells = 42 - (prevMonthDays.length + currentMonthDays.length);
@@ -308,7 +379,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         date: new Date(year, month + 1, i)
       });
     }
-    
+
     return [...prevMonthDays, ...currentMonthDays, ...nextMonthDays];
   };
 
@@ -356,7 +427,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
     const targetMidnight = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
     const diffMs = targetMidnight.getTime() - lmpMidnight.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
+
     const length = cycleData?.cycleLength || 28;
     const cycleDay = (diffDays % length) + 1;
     const ovulationDay = length - 14;
@@ -377,7 +448,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
     };
 
     setCycleData(newData);
-    localStorage.setItem("clara-cycle-tracker", JSON.stringify(newData));
+    localStorage.setItem("ova-cycle-tracker", JSON.stringify(newData));
     setIsEditingCycle(false);
     setError("");
   };
@@ -414,7 +485,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   };
 
   const loadLocalAnalyses = () => {
-    const saved = localStorage.getItem("clara-saved-analyses");
+    const saved = localStorage.getItem("ova-saved-analyses");
     if (saved) {
       setSavedAnalyses(JSON.parse(saved));
     } else {
@@ -423,14 +494,14 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   };
 
   // Calculate current cycle state if parameters exist
-  const cycleState = cycleData 
+  const cycleState = cycleData
     ? calculateCycleState(cycleData.lmp, cycleData.cycleLength, cycleData.periodDuration)
     : null;
 
   const currentPhase = cycleState ? cycleState.phase : "general";
   const activePhaseDetails = cycleState ? phaseDetails[cycleState.phase] : null;
 
-  const currentPhaseNormalized: "menstrual" | "follicular" | "ovulation" | "luteal" = 
+  const currentPhaseNormalized: "menstrual" | "follicular" | "ovulation" | "luteal" =
     (cycleState && (cycleState.phase === "menstrual" || cycleState.phase === "follicular" || cycleState.phase === "ovulation" || cycleState.phase === "luteal"))
       ? cycleState.phase
       : "follicular";
@@ -460,7 +531,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   // Expose current phase globally for other tabs like Mind Notes
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("clara-current-phase", currentPhaseNormalized);
+      localStorage.setItem("ova-current-phase", currentPhaseNormalized);
     }
   }, [currentPhaseNormalized]);
 
@@ -469,14 +540,14 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
       onLoginClick();
       return;
     }
-    
+
     try {
       const { error } = await supabase.from('cycle_logs').insert({
         user_id: session.user.id,
         start_date: dateStr
       });
       if (error) throw error;
-      
+
       await loadCycleLogs();
     } catch (err) {
       console.error("Failed to log period:", err);
@@ -539,7 +610,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
 
   const handleSaveAnalysis = async () => {
     if (!analysisResult) return;
-    
+
     const sender = senderLabel.trim().toLowerCase();
     const newSave: SavedAnalysis = {
       id: Math.random().toString(36).substring(2, 9),
@@ -579,7 +650,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   const saveLocally = (newSave: SavedAnalysis) => {
     const updated = [newSave, ...savedAnalyses];
     setSavedAnalyses(updated);
-    localStorage.setItem("clara-saved-analyses", JSON.stringify(updated));
+    localStorage.setItem("ova-saved-analyses", JSON.stringify(updated));
   };
 
   const handleDeleteAnalysis = async (id: string | number) => {
@@ -600,7 +671,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   const deleteLocally = (id: string | number) => {
     const updated = savedAnalyses.filter((a) => a.id !== id);
     setSavedAnalyses(updated);
-    localStorage.setItem("clara-saved-analyses", JSON.stringify(updated));
+    localStorage.setItem("ova-saved-analyses", JSON.stringify(updated));
   };
 
   // Group analyses by sender label to compute counts and compile pattern history
@@ -655,963 +726,839 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
       });
   };
 
-  return (
-    <div className="flex-1 overflow-y-auto px-4 md:px-8 py-8 max-w-5xl mx-auto w-full space-y-8 animate-slide-up">
-      
-      {/* Polished Hero Section */}
-      <section className="bg-lavender/35 border border-lavender/60 rounded-3xl p-6 md:p-8 text-center space-y-4 shadow-sm relative overflow-hidden">
-        {/* Top journal binder detailing */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-butter via-lavender to-butter-dark"></div>
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-indigo-500"></div>
-        
-        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-indigo-50 text-[10px] font-bold text-indigo-900 uppercase tracking-wider border border-indigo-100">
-          <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
-          <span>Mension Journal</span>
-        </div>
-        
-        <h1 className="font-dm-sans font-black text-3xl md:text-5xl text-gray-900 tracking-tight leading-none mb-4">
-          Understand what's really happening — in your messages and your body.
-        </h1>
-        
-        <p className="text-sm text-gray-500 max-w-xl mx-auto leading-relaxed font-medium">
-          Paste a message that left you confused, anxious, or gaslit. Mension automatically aligns with your body's current menstruation cycle phase to identify patterns of behavior with warm empathetic clarity.
-        </p>
-      </section>
+  const toggleSymptom = (symptom: string) => {
+    setSelectedSymptoms((prev) =>
+      prev.includes(symptom) ? prev.filter((s) => s !== symptom) : [...prev, symptom]
+    );
+  };
 
-      {/* Auth Banner if unauthenticated */}
-      {!session && (
-        <section className="glass-panel-yellow rounded-3xl p-5 border-butter flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-2xl bg-white flex items-center justify-center border border-butter-dark shadow-sm">
-              <span>🔒</span>
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-charcoal">Sync & Remember Patterns</h4>
-              <p className="text-[11px] text-warm-gray font-medium">Sign in to save your logs securely and unlock cross-message pattern memory.</p>
+  const handleDateClick = (d: number) => {
+    if (!cycleData) return;
+    const newLmpDate = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), d);
+    setPendingLogDate(newLmpDate);
+  };
+
+  const handleSaveDate = () => {
+    if (!pendingLogDate || !cycleData) return;
+    const yyyy = pendingLogDate.getFullYear();
+    const mm = String(pendingLogDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(pendingLogDate.getDate()).padStart(2, '0');
+    const newLmp = `${yyyy}-${mm}-${dd}`;
+
+    // Add to local cycle logs immediately to prevent calendar resetting when offline
+    const newLog = { id: Date.now().toString(), start_date: newLmp };
+    const currentLogs = [...cycleLogs];
+    if (!currentLogs.some(log => log.start_date === newLmp)) {
+      currentLogs.push(newLog);
+      currentLogs.sort((a, b) => {
+        const [ay, am, ad] = a.start_date.split('-');
+        const [by, bm, bd] = b.start_date.split('-');
+        return new Date(parseInt(by), parseInt(bm) - 1, parseInt(bd)).getTime() - new Date(parseInt(ay), parseInt(am) - 1, parseInt(ad)).getTime();
+      });
+      setCycleLogs(currentLogs);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("ova-cycle-logs", JSON.stringify(currentLogs));
+      }
+    }
+
+    const newData = {
+      lmp: newLmp,
+      cycleLength: cycleData.cycleLength || 28,
+      periodDuration: cycleData.periodDuration || 5
+    };
+    setCycleData(newData);
+    setLmpInput(newLmp);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("ova-cycle-tracker", JSON.stringify(newData));
+    }
+
+    if (session) {
+      handleLogPeriod(newLmp);
+    }
+
+    setPendingLogDate(null);
+    setIsEditingCycle(false);
+  };
+
+  const handleSetupCycle = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const defaultData = {
+      lmp: `${yyyy}-${mm}-${dd}`,
+      cycleLength: 28,
+      periodDuration: 5
+    };
+    setCycleData(defaultData);
+    setLmpInput(defaultData.lmp);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("ova-cycle-tracker", JSON.stringify(defaultData));
+    }
+
+    if (session) {
+      handleLogPeriod(defaultData.lmp);
+    }
+  };
+
+
+  const renderPhaser = () => {
+    if (!cycleState || !cycleData) return null;
+
+    // Premium glassmorphism dial math
+    const radius = 115, stroke = 12;
+    const normalizedRadius = radius - stroke * 1.5;
+    const circumference = normalizedRadius * 2 * Math.PI;
+    const progressRatio = Math.min(1, cycleState.currentDay / cycleData.cycleLength);
+    const strokeDashoffset = circumference - (progressRatio * circumference);
+
+    return (
+      <div className="flex flex-col items-center justify-center py-8 relative z-10 animate-fade-in">
+        <div className="relative flex items-center justify-center group">
+          {/* Soft ambient background glow */}
+          <div className="absolute inset-0 rounded-full animate-breath opacity-60 blur-2xl transition-all duration-1000"
+            style={{ background: phaseVisual.dialGlow }}
+          />
+
+          {/* Frosted Glass Dial Container */}
+          <div className="relative bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] rounded-full flex items-center justify-center transition-transform duration-500 hover:scale-[1.02]"
+            style={{ width: `${radius * 2}px`, height: `${radius * 2}px` }}>
+
+            <svg height={radius * 2} width={radius * 2} className="absolute inset-0 z-10 -rotate-90 select-none">
+              {/* Thick background track */}
+              <circle
+                stroke="rgba(0, 0, 0, 0.03)"
+                fill="transparent"
+                strokeWidth={stroke}
+                r={normalizedRadius}
+                cx={radius}
+                cy={radius}
+              />
+              {/* Bright smooth progress bar */}
+              <circle
+                className={`transition-all duration-1000 ease-out drop-shadow-sm ${phaseVisual.progressStroke}`}
+                fill="transparent"
+                strokeWidth={stroke}
+                strokeDasharray={`${circumference} ${circumference}`}
+                style={{ strokeDashoffset }}
+                strokeLinecap="round"
+                r={normalizedRadius}
+                cx={radius}
+                cy={radius}
+              />
+            </svg>
+
+            {/* Centered Typography & Badges */}
+            <div className="relative z-20 flex flex-col items-center justify-center text-center px-4 w-full h-full">
+              <div className="mb-2 transition-transform duration-700 hover:scale-110">
+                {activePhaseDetails?.moonIcon}
+              </div>
+              <span className="text-[3.25rem] font-dm-sans font-extrabold text-charcoal tracking-tighter leading-none mb-1">
+                {cycleState.daysUntilNextPeriod < 0 ? "Late" : `Day ${cycleState.currentDay}`}
+              </span>
+              <span className={`text-xs font-bold uppercase tracking-[0.2em] ${phaseVisual.accentText} mt-2 flex items-center gap-2`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+                {activePhaseDetails?.title.replace(" Phase", "")}
+              </span>
+              <span className="text-[10px] font-bold text-warm-gray mt-3 uppercase tracking-widest bg-black/5 px-3 py-1.5 rounded-full">
+                {cycleState.daysUntilNextPeriod >= 0
+                  ? `${cycleState.daysUntilNextPeriod} days to next`
+                  : `${Math.abs(cycleState.daysUntilNextPeriod)} days late`}
+              </span>
             </div>
           </div>
-          <button
-            onClick={onLoginClick}
-            className="px-4 py-2 bg-white hover:bg-lavender-light border border-lavender-dark/45 text-charcoal text-xs font-bold rounded-2xl transition-all-300 shrink-0 hover:scale-102"
-          >
-            Create Free Account
-          </button>
-        </section>
-      )}
+        </div>
+      </div>
+    );
+  };
 
-      {/* Main Grid - Stacks on Mobile */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        {/* Left Column: Period Status/Setup Form & Analyzer Input */}
-        <div className="lg:col-span-7 space-y-6">
-          
-          {/* A. Cycle Setup Card or Today's Cycle Status Card */}
-          {(!cycleData || isEditingCycle) ? (
-            <div className="glass-panel rounded-3xl p-6 border-lavender bg-white/60 space-y-5 animate-fade-in">
-              <div className="flex items-center justify-between border-b border-lavender/30 pb-3">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5 text-purple-400" />
-                  <h3 className="font-dm-sans font-bold text-base text-charcoal">Align with your Menstrual Cycle</h3>
-                </div>
-                {cycleData && (
-                  <button 
-                    onClick={() => setIsEditingCycle(false)} 
-                    className="text-xs font-semibold text-warm-gray hover:text-charcoal px-3 py-1 rounded-xl hover:bg-lavender-light transition-all"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
+  const renderCalendar = () => {
+    if (!cycleData) return null;
+    const today = new Date();
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+    const daysInMonth = lastDayOfMonth.getDate();
+    const startingDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7; // Mon = 0
 
-              {!session ? (
-                <div className="bg-lavender-light/40 border border-lavender/50 p-6 rounded-2xl text-center space-y-4">
-                  <p className="text-sm text-charcoal font-medium">
-                    Please sign in to securely save your health history and enable anomaly detection.
-                  </p>
-                  <button
-                    onClick={onLoginClick}
-                    className="bg-butter hover:bg-butter-dark text-charcoal font-bold py-2.5 px-6 rounded-2xl transition-all shadow-sm"
-                  >
-                    Sign in to Tracker
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <label className="block text-[10px] font-bold text-charcoal uppercase tracking-wider">
-                      Select Date on Calendar:
-                    </label>
-                    <div className="border border-lavender rounded-3xl p-4 bg-white/90 shadow-sm space-y-3 relative z-10">
-                      <div className="flex items-center justify-between">
-                        <button
-                          type="button"
-                          onClick={handlePrevMonth}
-                          className="p-1.5 rounded-xl hover:bg-lavender-light text-charcoal transition-all cursor-pointer border border-lavender/30 bg-white/50"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <span className="font-dm-sans font-bold text-xs text-charcoal uppercase tracking-wider">
-                          {calendarMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={handleNextMonth}
-                          className="p-1.5 rounded-xl hover:bg-lavender-light text-charcoal transition-all cursor-pointer border border-lavender/30 bg-white/50"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
+    const calendarCells = [];
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+      calendarCells.push(
+        <div key={`prev-${i}`} className="h-10 md:h-14 flex items-center justify-center text-xs font-medium text-on-surface/20">
+          {prevMonthLastDay - i}
+        </div>
+      );
+    }
+
+    const lmpDate = new Date(cycleData.lmp);
+    const lmpMidnight = new Date(lmpDate.getFullYear(), lmpDate.getMonth(), lmpDate.getDate()).getTime();
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const currentCellDate = new Date(year, month, d).getTime();
+
+      let effectiveLmpMidnight = lmpMidnight;
+      let effectiveCycleLength = cycleData.cycleLength;
+      let isFuturePrediction = true;
+
+      if (cycleLogs && cycleLogs.length > 0) {
+        const parseLocalDate = (dateStr: string) => {
+          const [y, m, d] = dateStr.split('-');
+          return new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).getTime();
+        };
+
+        const applicableLogIndex = cycleLogs.findIndex(log => parseLocalDate(log.start_date) <= currentCellDate);
+        if (applicableLogIndex !== -1) {
+          const applicableLog = cycleLogs[applicableLogIndex];
+          effectiveLmpMidnight = parseLocalDate(applicableLog.start_date);
+
+          if (applicableLogIndex > 0) {
+            const nextLog = cycleLogs[applicableLogIndex - 1];
+            const nextMidnight = parseLocalDate(nextLog.start_date);
+            effectiveCycleLength = Math.max(21, Math.round((nextMidnight - effectiveLmpMidnight) / (1000 * 60 * 60 * 24)));
+            isFuturePrediction = false;
+          }
+        } else {
+          const earliestLog = cycleLogs[cycleLogs.length - 1];
+          effectiveLmpMidnight = parseLocalDate(earliestLog.start_date);
+        }
+      }
+
+      const diffMs = currentCellDate - effectiveLmpMidnight;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      let phaseClass = "text-on-surface/40 hover:bg-surface-container";
+
+      let dayOfCycle = 1;
+      if (diffDays >= 0) {
+        if (!isFuturePrediction) {
+          dayOfCycle = diffDays + 1;
+        } else {
+          dayOfCycle = (diffDays % effectiveCycleLength) + 1;
+        }
+      } else {
+        const remainder = Math.abs(diffDays) % effectiveCycleLength;
+        dayOfCycle = remainder === 0 ? 1 : effectiveCycleLength - remainder + 1;
+      }
+
+      const ovulationDay = effectiveCycleLength - 14;
+      let phase = "follicular";
+      if (dayOfCycle <= cycleData.periodDuration) phase = "menstrual";
+      else if (dayOfCycle < ovulationDay) phase = "follicular";
+      else if (dayOfCycle === ovulationDay || dayOfCycle === ovulationDay + 1) phase = "ovulation";
+      else phase = "luteal";
+
+      if (phase === "menstrual") phaseClass = "bg-red-100 rounded-2xl text-red-600 hover:bg-red-200";
+      if (phase === "follicular") phaseClass = "bg-blue-100 rounded-2xl text-blue-600 hover:bg-blue-200";
+      if (phase === "ovulation") phaseClass = "bg-emerald-100 rounded-2xl text-emerald-700 hover:bg-emerald-200";
+      if (phase === "luteal") phaseClass = "bg-amber-100 rounded-2xl text-amber-700 hover:bg-amber-200";
+
+      const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+      if (isToday) {
+        phaseClass += " border-2 border-charcoal shadow-lg scale-110 z-10 relative";
+      }
+
+      const isPending = pendingLogDate?.getDate() === d && pendingLogDate?.getMonth() === month && pendingLogDate?.getFullYear() === year;
+      if (isPending) {
+        phaseClass += " ring-4 ring-primary/40 ring-offset-2 scale-110 z-20 relative font-bold";
+      }
+
+      calendarCells.push(
+        <button
+          key={`day-${d}`}
+          onClick={() => handleDateClick(d)}
+          className={`w-full h-10 md:h-14 flex items-center justify-center text-xs font-medium cursor-pointer transition-all hover:scale-105 ${phaseClass}`}
+          title={`Set period start date to ${today.toLocaleString('default', { month: 'short' })} ${d}`}
+        >
+          {d}
+        </button>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-7 gap-2 md:gap-4 mb-10">
+        <div className="text-center text-[10px] font-bold text-on-surface/20 uppercase">M</div>
+        <div className="text-center text-[10px] font-bold text-on-surface/20 uppercase">T</div>
+        <div className="text-center text-[10px] font-bold text-on-surface/20 uppercase">W</div>
+        <div className="text-center text-[10px] font-bold text-on-surface/20 uppercase">T</div>
+        <div className="text-center text-[10px] font-bold text-on-surface/20 uppercase">F</div>
+        <div className="text-center text-[10px] font-bold text-on-surface/20 uppercase">S</div>
+        <div className="text-center text-[10px] font-bold text-on-surface/20 uppercase">S</div>
+        {calendarCells}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto w-full h-full text-on-surface selection:bg-butter/30 selection:text-primary bg-surface-container-low font-sans">
+      <main>
+        {/* 1. HERO SECTION */}
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <section className="w-full bg-butter rounded-[40px] p-12 md:p-24 text-center relative overflow-hidden mb-16 shadow-2xl">
+            <div className="inline-flex items-center px-6 py-2 rounded-full border border-on-surface/10 bg-white/20 backdrop-blur-sm mb-12">
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-on-surface">Mension Journal •</span>
+            </div>
+            <h1 className="font-serif text-5xl md:text-8xl leading-[1.1] mb-12 tracking-tight max-w-5xl mx-auto">
+              Understand what's <span className="italic relative">really<span className="absolute -bottom-2 left-0 w-full h-3 bg-on-surface/10 rounded-full"></span></span> happening.
+            </h1>
+            <div className="flex flex-wrap justify-center items-center gap-3 text-lg md:text-xl font-medium text-on-surface/80 max-w-3xl mx-auto">
+              <span>Paste a message that left you</span>
+              <span className="px-3 py-1 rounded-lg bg-secondary-container text-on-surface text-sm font-bold">confused</span>
+              <span>,</span>
+              <span className="px-3 py-1 rounded-lg bg-hotpink-light text-white text-sm font-bold">anxious</span>
+              <span>, or</span>
+              <span className="px-3 py-1 rounded-lg bg-lavender text-on-surface text-sm font-bold">guilt</span>
+              <span>. We'll align it with your body's cycle to find</span>
+              <span className="px-3 py-1 rounded-lg bg-white border border-on-surface/10 text-on-surface text-sm font-bold shadow-sm">clarity</span>
+              <span>.</span>
+            </div>
+          </section>
+        </div>
+
+        {/* 2. CORE ANALYZER */}
+        <section id="analyzer-pro" className="py-12 md:py-24">
+          <div className="max-w-5xl mx-auto px-6 relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-butter via-lavender to-hotpink rounded-[42px] blur opacity-20 group-hover:opacity-30 transition duration-1000"></div>
+            <div className="relative bg-white rounded-[40px] shadow-2xl overflow-hidden border border-lavender/10">
+              <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
+                <div className="lg:col-span-6 p-8 md:p-12 space-y-10 border-r border-lavender/10">
+                  <form onSubmit={handleAnalyze} className="space-y-8">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 rounded-full bg-butter flex items-center justify-center text-xs font-bold text-primary shadow-sm">1</div>
+                        <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-on-surface/60">Paste the Message</h3>
                       </div>
-
-                      <div className="grid grid-cols-7 gap-1 text-center">
-                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((wd) => (
-                          <span key={wd} className="text-[9px] font-bold text-warm-gray uppercase tracking-wide">
-                            {wd}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="grid grid-cols-7 gap-1">
-                        {daysGrid.map((cell, idx) => {
-                          const isSelected = isSelectedLmp(cell.date);
-                          const isBleeding = isBleedingDay(cell.date);
-                          const isOvulating = isPredictedOvulation(cell.date);
-                          
-                          const today = new Date();
-                          today.setHours(0,0,0,0);
-                          const isFuture = cell.date > today;
-                          
-                          return (
-                            <button
-                              type="button"
-                              key={idx}
-                              onClick={() => handleDayClick(cell.date)}
-                              disabled={!cell.isCurrentMonth || isFuture}
-                              className={`h-8 w-8 mx-auto flex flex-col items-center justify-center text-xs rounded-full transition-all duration-200 cursor-pointer relative ${
-                                (!cell.isCurrentMonth || isFuture)
-                                  ? "text-warm-gray/20 pointer-events-none"
-                                  : isSelected
-                                  ? "bg-butter text-charcoal font-bold border-2 border-lavender-dark shadow-sm scale-110"
-                                  : isBleeding
-                                  ? "bg-lavender text-purple-700 font-semibold border border-lavender-dark/30 shadow-inner"
-                                  : isOvulating
-                                  ? "border border-dashed border-butter-dark bg-butter-light/50 text-charcoal font-bold"
-                                  : "hover:bg-lavender-light/50 text-charcoal"
-                              }`}
-                            >
-                              <span>{cell.day}</span>
-                              {cell.isCurrentMonth && isBleeding && !isSelected && (
-                                <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-                              )}
-                              {cell.isCurrentMonth && isOvulating && (
-                                <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-butter-dark animate-pulse"></span>
-                              )}
-                            </button>
-                          );
-                        })}
+                      <div className="relative">
+                        <textarea
+                          id="message-input"
+                          value={messageText}
+                          onChange={(e) => { setMessageText(e.target.value); if (error) setError(""); }}
+                          className="w-full h-48 p-6 rounded-3xl bg-surface-container-low border border-lavender/10 focus:border-lavender focus:ring-4 focus:ring-lavender/10 transition-all text-sm font-medium placeholder:text-on-surface/20 custom-scrollbar resize-none"
+                          placeholder="'I think you're being a bit sensitive about this, don't you?'">
+                        </textarea>
                       </div>
                     </div>
-                    
-                    {lmpInput && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 rounded-full bg-lavender flex items-center justify-center text-xs font-bold text-secondary shadow-sm">2</div>
+                        <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-on-surface/60">Identify Sender</h3>
+                      </div>
+                      <input
+                        id="sender-input"
+                        type="text"
+                        value={senderLabel}
+                        onChange={(e) => { setSenderLabel(e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, "")); if (error) setError(""); }}
+                        className="w-full px-8 py-4 rounded-full bg-surface-container-low border border-lavender/10 focus:border-lavender focus:ring-4 focus:ring-lavender/10 transition-all text-sm font-bold placeholder:font-normal placeholder:text-on-surface/30"
+                        placeholder="e.g. Manager, Partner, Mother-in-law"
+                      />
+                    </div>
+                    {error && (
+                      <p className="text-xs text-red-500 font-bold flex items-center gap-1.5 mt-2">
+                        {error}
+                      </p>
+                    )}
+                    <div className="pt-4">
                       <button
-                        onClick={() => handleLogPeriod(lmpInput)}
-                        className="w-full mt-4 bg-butter hover:bg-butter-dark text-charcoal border border-butter-dark/50 font-bold py-3.5 rounded-2xl transition-all-300 shadow-sm cursor-pointer"
+                        type="submit"
+                        disabled={isAnalyzing}
+                        className="group/btn w-full py-6 rounded-full bg-charcoal text-white font-bold text-sm uppercase tracking-widest hover:bg-charcoal/90 transition-all shadow-xl flex items-center justify-center gap-3">
+                        {isAnalyzing ? (
+                          <><span className="material-symbols-outlined animate-spin">refresh</span> Processing...</>
+                        ) : (
+                          <><span className="material-symbols-outlined text-[20px]">auto_awesome</span> Analyze & Reveal Clarity</>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+                <div id="result-container" className="lg:col-span-6 relative bg-surface-bright flex flex-col">
+                  {!analysisResult && !isAnalyzing ? (
+                    <div id="result-empty" className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-6">
+                      <div className="w-20 h-20 rounded-full bg-lavender/20 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-lavender text-4xl">psychology</span>
+                      </div>
+                      <h3 className="font-serif text-2xl font-bold">Waiting for input</h3>
+                      <p className="text-sm text-on-surface/40 max-w-xs mx-auto">Complete the steps on the left to unlock Ova's deep empathetic analysis.</p>
+                    </div>
+                  ) : isAnalyzing ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-6 animate-pulse-slow">
+                      <div className="w-20 h-20 rounded-full bg-lavender/20 flex items-center justify-center relative overflow-hidden">
+                        <div className="absolute inset-0 border-4 border-t-lavender-dark border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                      </div>
+                      <p className="text-sm font-semibold text-charcoal">Ova is reading between the lines...</p>
+                    </div>
+                  ) : (
+                    <div id="result-active" className="flex-1 flex flex-col p-8 md:p-12 animate-fade-in">
+                      <div className="flex justify-between items-center mb-10">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-butter p-0.5 border-2 border-white shadow-sm overflow-hidden">
+                            <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAY3gp7Eryh8Lm6GR2x0xk1I2M0fWzCkVIw9SSS1IavhclnIfOSN01xcLjRwYxD3vvg38WCUb-O3aCBfuM4FszJRXDVzkt1XYk4h3mZjobn7s3gmJvbonFqoegxzVqvXNrzy0rqInLGGg1RulpV8ue95Rah_0etCS8SWgfeF510gOHBlV7ntqb80s-1BTZZvMi1wszWCZ-miFo3ywvUTHrnRejY5oNCdEr5aFPmj49d1sbefxu6Sb6mf3c2-DvxqIzmIE69qbSpyZI" alt="Ova" />
+                          </div>
+                          <h4 className="text-xs font-bold uppercase tracking-widest">Ova's Analysis</h4>
+                        </div>
+                        <button
+                          onClick={() => { setMessageText(""); setSenderLabel(""); setAnalysisResult(null); setIsCurrentMessageToxic(false); }}
+                          className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors text-on-surface/20">
+                          <span className="material-symbols-outlined text-[20px]">close</span>
+                        </button>
+                      </div>
+                      <div id="analysis-content" className="flex-1 space-y-8 overflow-y-auto custom-scrollbar">
+                        <div className="space-y-6 text-on-surface/80 leading-relaxed font-sans text-sm whitespace-pre-wrap">
+                          {analysisResult?.split("\n\n").map((paragraph: string, index: number) => {
+                            if (paragraph.startsWith("###")) {
+                              return <h3 key={index} className="font-serif text-2xl font-bold text-on-surface">{paragraph.replace("### ", "")}</h3>;
+                            }
+                            if (paragraph.startsWith("####")) {
+                              return <h4 key={index} className="text-[10px] uppercase tracking-[0.2em] font-bold text-hotpink">{paragraph.replace("#### ", "")}</h4>;
+                            }
+                            return <p key={index}>{paragraph}</p>;
+                          })}
+                        </div>
+                        <button
+                          onClick={handleSaveAnalysis}
+                          className="w-full bg-butter hover:bg-butter-dark text-charcoal font-bold py-3.5 rounded-full transition-all shadow-md text-sm mt-8">
+                          Save to Reflection Log
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. THE SCIENCE OF SUBTEXT */}
+        <section id="science" className="py-12 md:py-24">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-20 space-y-4">
+              <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-lavender/30 text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">The Neuro-Endocrinology</div>
+              <h2 className="font-serif text-4xl md:text-6xl tracking-tight">The Science of Subtext</h2>
+              <p className="text-on-surface/60 max-w-2xl mx-auto text-lg leading-relaxed">How your hormonal architecture alters your perception of interpersonal friction.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="bg-white p-8 rounded-[32px] border border-lavender/20 shadow-sm hover:shadow-xl transition-all group">
+                <div className="w-12 h-12 rounded-2xl bg-hotpink/10 flex items-center justify-center text-hotpink mb-6 group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined">neurology</span>
+                </div>
+                <h4 className="font-bold text-sm uppercase tracking-widest mb-3">Neurochemical Sensitivity</h4>
+                <p className="text-xs text-on-surface/60 leading-relaxed">Fluctuating progesterone alters the amygdala's threat-detection threshold, making passive aggression feel 3x more intense.</p>
+              </div>
+              <div className="bg-white p-8 rounded-[32px] border border-lavender/20 shadow-sm hover:shadow-xl transition-all group">
+                <div className="w-12 h-12 rounded-2xl bg-butter/20 flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined">psychiatry</span>
+                </div>
+                <h4 className="font-bold text-sm uppercase tracking-widest mb-3">Pattern Recognition</h4>
+                <p className="text-xs text-on-surface/60 leading-relaxed">Our LLM matches linguistic patterns with your current hormonal phase to decode true intent from "surface" language.</p>
+              </div>
+              <div className="bg-white p-8 rounded-[32px] border border-lavender/20 shadow-sm hover:shadow-xl transition-all group">
+                <div className="w-12 h-12 rounded-2xl bg-secondary-container flex items-center justify-center text-secondary mb-6 group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined">directions_run</span>
+                </div>
+                <h4 className="font-bold text-sm uppercase tracking-widest mb-3">Safe Exit Paths</h4>
+                <p className="text-xs text-on-surface/60 leading-relaxed">We provide biologically-aligned scripts that de-escalate conflict without sacrificing your personal boundaries.</p>
+              </div>
+              <div className="bg-white p-8 rounded-[32px] border border-lavender/20 shadow-sm hover:shadow-xl transition-all group">
+                <div className="w-12 h-12 rounded-2xl bg-success-green/20 flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined">eco</span>
+                </div>
+                <h4 className="font-bold text-sm uppercase tracking-widest mb-3">Biological Nourishment</h4>
+                <p className="text-xs text-on-surface/60 leading-relaxed">Specific micronutrient pairings that stabilize glucose levels to reduce cortisol spikes during difficult conversations.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. BIO-REALTIME & CYCLE */}
+        <section id="cycle-suite" className="py-12 md:py-24">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex flex-col lg:flex-row gap-12">
+              <div className="flex-1 bg-surface-container-low rounded-[40px] p-8 md:p-12 border border-lavender/20 shadow-lg">
+                <div className="flex justify-between items-center mb-10">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <h2 className="font-serif text-3xl font-bold">Your Cycle</h2>
+                      <div className="flex items-center gap-3 mt-1">
+                        <button onClick={handlePrevMonth} className="p-1 hover:bg-black/5 rounded-full text-on-surface/50 hover:text-on-surface"><ChevronLeft className="w-4 h-4" /></button>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface/40 min-w-[100px] text-center">
+                          {calendarMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                        </p>
+                        <button onClick={handleNextMonth} className="p-1 hover:bg-black/5 rounded-full text-on-surface/50 hover:text-on-surface"><ChevronRight className="w-4 h-4" /></button>
+                      </div>
+                    </div>
+                    {cycleState && (
+                      <button
+                        onClick={() => setIsEditingCycle(!isEditingCycle)}
+                        className="px-4 py-2 flex items-center gap-2 rounded-full hover:bg-white/80 transition-colors bg-white border border-lavender/30 shadow-sm cursor-pointer"
+                        title={isEditingCycle ? "Cancel Edit" : "Edit Logs"}
                       >
-                        Log Date: {new Date(lmpInput).toLocaleDateString()}
+                        <span className="material-symbols-outlined text-[16px] text-on-surface">{isEditingCycle ? "close" : "edit"}</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-charcoal">{isEditingCycle ? "Close" : "Edit Logs"}</span>
                       </button>
                     )}
                   </div>
-
-                  <div className="pt-4 border-t border-lavender/40 space-y-3">
-                    <button
-                      onClick={() => handleLogPeriod(new Date().toISOString().split("T")[0])}
-                      className="w-full bg-lavender hover:bg-lavender-dark text-purple-900 border border-lavender-dark/50 font-bold py-3.5 rounded-2xl transition-all-300 shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <span className="text-lg">🩸</span>
-                      <span>My Period Started Today</span>
+                  {cycleState ? (
+                    <div className="px-4 py-2 rounded-full bg-[#FF3366] text-white text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-[#FF3366]/20">
+                      {cycleState.daysUntilNextPeriod >= 0
+                        ? `${cycleState.daysUntilNextPeriod} Days until bleed`
+                        : `${Math.abs(cycleState.daysUntilNextPeriod)} Days late`}
+                    </div>
+                  ) : (
+                    <button onClick={handleSetupCycle} className="px-6 py-2 bg-butter text-charcoal rounded-full font-bold uppercase tracking-widest text-[10px] cursor-pointer hover:scale-105 transition-transform">
+                      Setup Cycle
                     </button>
-                  </div>
+                  )}
+                </div>
 
-                  {cycleLogs.length > 0 && (
-                    <div className="pt-6">
-                      <h4 className="text-xs font-bold text-charcoal uppercase tracking-wider mb-3">Your Log History</h4>
-                      <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
-                        {cycleLogs.map((log) => (
-                          <div key={log.id} className="flex justify-between items-center bg-white/60 border border-lavender/40 p-3 rounded-xl group">
-                            <div>
-                              <span className="text-sm font-semibold text-charcoal">{new Date(log.start_date).toLocaleDateString(undefined, { timeZone: 'UTC' })}</span>
-                              <span className="text-[10px] uppercase font-bold text-warm-gray tracking-wider ml-2">Period Start</span>
-                            </div>
+                {cycleState && (
+                  <>
+                    {!isEditingCycle ? renderPhaser() : (
+                      <>
+                        {renderCalendar()}
+                        <div className="grid grid-cols-4 gap-2 mb-6">
+                          <div className="p-3 rounded-2xl bg-red-50 text-center"><div className="w-2 h-2 rounded-full bg-red-400 mx-auto mb-1"></div><p className="text-[8px] font-bold uppercase tracking-wider text-red-600">Menstrual</p></div>
+                          <div className="p-3 rounded-2xl bg-blue-50 text-center"><div className="w-2 h-2 rounded-full bg-blue-400 mx-auto mb-1"></div><p className="text-[8px] font-bold uppercase tracking-wider text-blue-600">Follicular</p></div>
+                          <div className="p-3 rounded-2xl bg-emerald-50 text-center"><div className="w-2 h-2 rounded-full bg-emerald-400 mx-auto mb-1"></div><p className="text-[8px] font-bold uppercase tracking-wider text-emerald-700">Ovulation</p></div>
+                          <div className="p-3 rounded-2xl bg-amber-50 text-center"><div className="w-2 h-2 rounded-full bg-amber-400 mx-auto mb-1"></div><p className="text-[8px] font-bold uppercase tracking-wider text-amber-700">Luteal</p></div>
+                        </div>
+
+                        {pendingLogDate && (
+                          <div className="mt-6 pt-4 border-t border-lavender/30 animate-fade-in">
                             <button
-                              onClick={() => handleDeleteLog(log.id)}
-                              className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors cursor-pointer"
-                              title="Delete log"
+                              onClick={handleSaveDate}
+                              className="w-full py-4 rounded-2xl bg-primary/10 border border-primary/20 text-primary font-bold hover:bg-primary/20 transition-colors shadow-sm flex justify-center items-center gap-2"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <span>Save Log:</span>
+                              <span className="text-charcoal">{pendingLogDate.toLocaleDateString()}</span>
                             </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {cycleIrregularity && (
+                      <div className="p-4 rounded-2xl bg-red-50 border border-red-100 flex gap-4 items-start">
+                        <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="text-sm font-bold text-red-900 mb-1">Cycle Irregularity Detected</h4>
+                          <p className="text-xs text-red-700 leading-relaxed mb-3">
+                            {cycleIrregularity === 'long_cycles' && "We've noticed your cycles are consistently longer than 38 days. While this can be normal for some, it's a good idea to track these patterns closely."}
+                            {cycleIrregularity === 'short_cycles' && "Your cycles appear to be shorter than 21 days. This frequent cycling can affect your energy and nutrient stores."}
+                            {cycleIrregularity === 'highly_variable' && "There's significant variation in your cycle lengths (more than 10 days difference between cycles). This unpredictability can make tracking difficult."}
+                          </p>
+                          <div className="flex gap-3">
+                            <button className="text-xs font-bold text-red-600 hover:text-red-800 bg-red-100 px-3 py-1.5 rounded-full transition-colors">Chat with Ova</button>
+                            <button className="text-xs font-bold text-red-600 hover:text-red-800 bg-red-100 px-3 py-1.5 rounded-full transition-colors">Consult Gynae Guide</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="lg:w-1/3 space-y-8">
+                <div className="bg-white rounded-[40px] p-8 shadow-xl border border-lavender/20">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="font-serif text-2xl font-bold">Bio-Realtime</h3>
+                  </div>
+                  {cycleState && phaseVisual && (
+                    <>
+                      <div className="space-y-6">
+                        {phaseVisual.insights?.map((insight: any, idx: number) => (
+                          <div key={idx} className="space-y-2">
+                            <div className="flex justify-between items-end">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface/80">{insight.title}</span>
+                              <span className="text-xs font-serif italic text-on-surface/80 font-bold">{insight.value}%</span>
+                            </div>
+                            <div className="w-full h-3 bg-surface-container rounded-full overflow-hidden">
+                              <div className={`h-full ${insight.color} transition-all duration-1000`} style={{ width: `${insight.value}%` }}></div>
+                            </div>
                           </div>
                         ))}
                       </div>
-                      
-                      {cycleData && (
-                        <div className="mt-4 flex justify-end">
-                          <button
-                            onClick={() => setIsEditingCycle(false)}
-                            className="text-xs font-bold text-purple-700 hover:text-purple-900 cursor-pointer"
-                          >
-                            Return to Dashboard →
-                          </button>
+
+                      <div className="pt-8 border-t border-lavender/10 mt-8 space-y-6">
+                        <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-on-surface/60">
+                          <span>Pregnancy Chance</span>
+                          <span className={phaseVisual.pregnancyChance.includes("High") ? "text-emerald-500" : "text-on-surface/80"}>
+                            {phaseVisual.pregnancyChance}
+                          </span>
                         </div>
-                      )}
-                    </div>
+                        <div className={`p-6 rounded-[32px] border ${phaseVisual.accentBg} bg-opacity-10 space-y-4`}>
+                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-inherit">Current Phase: {currentPhaseNormalized}</h4>
+                          <p className="text-xs leading-relaxed font-medium">
+                            {phaseVisual.mensionTip}
+                          </p>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
-              )}
-            </div>
-          ) : (
-            /* Visual Cycle Status Card - Flo/Mension style */
-            <div className="glass-panel rounded-3xl p-6 border-lavender bg-white/70 space-y-6 animate-fade-in relative overflow-hidden shadow-xl shadow-lavender/10">
-              {/* Background gradient decorative glow reflecting the phase */}
-              <div className={`absolute -right-24 -top-24 w-60 h-60 bg-gradient-to-br ${phaseVisual.bgGradient} rounded-full blur-3xl opacity-80 pointer-events-none`}></div>
-              <div className={`absolute -left-24 -bottom-24 w-60 h-60 bg-gradient-to-tr ${phaseVisual.bgGradient} rounded-full blur-3xl opacity-80 pointer-events-none`}></div>
-              
-              {/* Header inside the tracker card */}
-              <div className="flex items-center justify-between border-b border-lavender/30 pb-3 relative z-10">
-                <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 rounded-full bg-butter-dark animate-pulse"></span>
-                  <h3 className="font-dm-sans font-bold text-sm text-charcoal">Cycle Tracker & Insights</h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingCycle(true)}
-                  className="p-1.5 rounded-xl text-warm-gray hover:text-charcoal hover:bg-lavender-light transition-all flex items-center gap-1 text-xs font-semibold cursor-pointer border border-lavender/20 bg-white/40"
-                  title="Update period settings"
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  <span>Edit</span>
-                </button>
-              </div>
 
-              {/* Flo-style Bubble Centerpiece */}
-              <div className="flex flex-col items-center justify-center py-2 relative z-10">
-                <div className="relative flex items-center justify-center">
-                  {/* Glowing halo behind the dial */}
-                  <div 
-                    className="absolute rounded-full animate-breath transition-all duration-700"
-                    style={{
-                      width: `${radius * 2 - 12}px`,
-                      height: `${radius * 2 - 12}px`,
-                      background: `radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 40%, transparent 100%)`,
-                      boxShadow: `0 0 30px 10px ${phaseVisual.dialGlow}`,
-                      zIndex: 1
-                    }}
-                  ></div>
-
-                  {/* SVG Radial Gauge */}
-                  <svg
-                    height={radius * 2}
-                    width={radius * 2}
-                    className="relative z-10 -rotate-90 select-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.03)]"
-                  >
-                    {/* Background Circle */}
-                    <circle
-                      stroke="rgba(0, 0, 0, 0.05)"
-                      fill="transparent"
-                      strokeWidth={stroke}
-                      r={normalizedRadius}
-                      cx={radius}
-                      cy={radius}
-                    />
-                    {/* Foreground Active Arc */}
-                    <circle
-                      className={`transition-all duration-1000 ease-out ${phaseVisual.progressStroke}`}
-                      fill="transparent"
-                      strokeWidth={stroke}
-                      strokeDasharray={circumference + " " + circumference}
-                      style={{ strokeDashoffset }}
-                      strokeLinecap="round"
-                      r={normalizedRadius}
-                      cx={radius}
-                      cy={radius}
-                    />
-                  </svg>
-
-                  {/* Bubble Content overlay inside the radial circle */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20 text-center p-4">
-                    <div className="w-7 h-7 rounded-full bg-white/95 border border-lavender/45 flex items-center justify-center shadow-sm text-xs animate-float">
-                      {activePhaseDetails?.moonIcon}
-                    </div>
-                    
-                    <span className="text-3xl font-dm-sans font-extrabold text-charcoal tracking-tight mt-1 leading-none">
-                      Day {cycleState?.currentDay}
-                    </span>
-                    
-                    <span className={`text-[10px] font-bold uppercase tracking-wider ${phaseVisual.accentText} mt-1`}>
-                      {activePhaseDetails?.title.replace(" Phase", "")}
-                    </span>
-                    
-                    <span className="text-[9px] font-medium text-warm-gray mt-0.5">
-                      {cycleState?.daysUntilNextPeriod} days to next
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dynamic Health Stats & Hormone Forecast Grid */}
-              <div className="space-y-3 relative z-10 bg-white/60 p-4 rounded-3xl border border-lavender/35">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-charcoal uppercase tracking-wider flex items-center gap-1">
-                    <Activity className="w-3.5 h-3.5 text-butter-dark" />
-                    Hormone & State Forecast
-                  </span>
-                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${phaseVisual.accentBg} border`}>
-                    Pregnancy Chance: {phaseVisual.pregnancyChance}
-                  </span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  {phaseVisual.insights.map((gauge) => (
-                    <div key={gauge.title} className="space-y-1">
-                      <div className="flex justify-between text-[9px] font-bold text-warm-gray">
-                        <span>{gauge.title}</span>
-                        <span className="text-charcoal">{gauge.value}%</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-lavender-light rounded-full overflow-hidden border border-lavender/20">
-                        <div
-                          style={{ width: `${gauge.value}%` }}
-                          className={`h-full ${gauge.color} rounded-full transition-all duration-1000`}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Anomaly Check-in Card */}
-              {isCycleDelayed && (
-                <div className="bg-red-50/80 border border-red-200 p-4 rounded-3xl relative z-10 space-y-2 animate-fade-in shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-500" />
-                    <span className="text-[10px] font-bold text-red-700 uppercase tracking-wider">Mension Check-in</span>
-                  </div>
-                  <p className="text-xs text-charcoal leading-relaxed font-medium">
-                    Hey, I noticed your cycle is a bit delayed this month (Day {cycleState?.currentDay}). Have you been under a lot of stress lately, or is this unusual for you? 
-                  </p>
-                  <button 
-                    onClick={() => setActiveTab("chat")}
-                    className="w-full mt-2 bg-white hover:bg-red-100 text-red-600 text-xs font-bold py-2 rounded-xl border border-red-200 transition-all shadow-sm cursor-pointer"
-                  >
-                    Chat with Ova about this
-                  </button>
-                </div>
-              )}
-
-              {/* Historical Irregularity Card */}
-              {cycleIrregularity && (
-                <div className="bg-amber-50/80 border border-amber-200 p-4 rounded-3xl relative z-10 space-y-2 animate-fade-in shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-amber-500" />
-                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Health Insight</span>
-                  </div>
-                  <p className="text-xs text-charcoal leading-relaxed font-medium">
-                    {cycleIrregularity === "long_cycles" && "I noticed your cycles are consistently longer than usual or have large gaps. This can happen due to stress, PCOS, or thyroid changes."}
-                    {cycleIrregularity === "short_cycles" && "I noticed your cycles are coming very quickly (under 21 days). This can sometimes cause fatigue or low iron. How have your energy levels been?"}
-                    {cycleIrregularity === "highly_variable" && "I noticed your cycle lengths are quite unpredictable and jump around. Stress or lifestyle shifts can do this."}
-                  </p>
-                  <button 
-                    onClick={() => setActiveTab("chat")}
-                    className="w-full mt-2 bg-white hover:bg-amber-100 text-amber-700 text-xs font-bold py-2 rounded-xl border border-amber-200 transition-all shadow-sm cursor-pointer"
-                  >
-                    Discuss my cycle health with Ova
-                  </button>
-                </div>
-              )}
-
-              {/* Dynamic Sympathetic Ova Insights Panel */}
-              <div className="bg-white/80 border border-lavender/50 p-4 rounded-3xl relative z-10 space-y-1.5 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                <div className="flex items-start space-x-2">
-                  <Heart className="w-4 h-4 text-butter-dark shrink-0 mt-0.5 fill-butter-dark/10" />
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] font-bold text-charcoal uppercase tracking-wider block">Ova Insights</span>
-                    <p className="text-[11px] text-charcoal/80 leading-relaxed font-medium">
-                      {phaseVisual.mensionTip}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Interactive Symptom Logger */}
-              <div className="space-y-3 relative z-10">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-charcoal uppercase tracking-wider flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5 text-butter-dark" />
-                    How do you feel today?
-                  </span>
-                  <span className="text-[9px] text-warm-gray font-semibold">Saved locally</span>
-                </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  {phaseVisual.symptoms.map((symptom) => {
-                    const isSelected = selectedSymptoms.includes(symptom);
-                    return (
-                      <button
-                        type="button"
-                        key={symptom}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedSymptoms(selectedSymptoms.filter((s) => s !== symptom));
-                          } else {
-                            setSelectedSymptoms([...selectedSymptoms, symptom]);
-                          }
-                        }}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 flex items-center gap-1 cursor-pointer ${
-                          isSelected
-                            ? `${phaseVisual.accentBg} shadow-sm scale-102`
-                            : "bg-white/50 border-lavender/50 text-warm-gray hover:bg-lavender-light hover:text-charcoal"
-                        }`}
-                      >
-                        {isSelected && <Check className="w-3 h-3 shrink-0" />}
-                        <span>{symptom}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Expandable Predicted Calendar View (Flo style) */}
-              <div className="border-t border-lavender/35 pt-4 relative z-10">
-                <button
-                  type="button"
-                  onClick={() => setShowCycleCalendar(!showCycleCalendar)}
-                  className="w-full flex items-center justify-between py-1 text-[10px] font-bold text-charcoal uppercase tracking-wider hover:text-purple-700 transition-all cursor-pointer"
-                >
-                  <span>📅 Predicted Cycle Calendar</span>
-                  <span>{showCycleCalendar ? "Hide" : "Show"}</span>
-                </button>
-
-                {showCycleCalendar && (
-                  <div className="mt-3 space-y-3 animate-fade-in">
-                    <div className="border border-lavender rounded-3xl p-4 bg-white/90 shadow-sm space-y-3">
-                      {/* Month header navigation */}
-                      <div className="flex items-center justify-between">
-                        <button
-                          type="button"
-                          onClick={handlePrevMonth}
-                          className="p-1 rounded-xl hover:bg-lavender-light text-charcoal transition-all text-xs font-bold cursor-pointer"
-                        >
-                          ←
-                        </button>
-                        <span className="font-dm-sans font-bold text-xs text-charcoal uppercase tracking-wider">
-                          {calendarMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={handleNextMonth}
-                          className="p-1 rounded-xl hover:bg-lavender-light text-charcoal transition-all text-xs font-bold cursor-pointer"
-                        >
-                          →
-                        </button>
-                      </div>
-
-                      {/* Weekdays header */}
-                      <div className="grid grid-cols-7 gap-1 text-center">
-                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((wd) => (
-                          <span key={wd} className="text-[9px] font-bold text-warm-gray uppercase tracking-wide">
-                            {wd}
-                          </span>
-                        ))}
-                      </div>
-
-                      {/* Days grid */}
-                      <div className="grid grid-cols-7 gap-1">
-                        {daysGrid.map((cell, idx) => {
-                          const isSelected = isSelectedLmp(cell.date);
-                          const isBleeding = isBleedingDay(cell.date);
-                          const isOvulating = isPredictedOvulation(cell.date);
-                          
-                          return (
-                            <div
-                              key={idx}
-                              className={`h-8 w-8 mx-auto flex flex-col items-center justify-center text-xs rounded-full relative ${
-                                !cell.isCurrentMonth
-                                  ? "text-warm-gray/25"
-                                  : isSelected
-                                  ? "bg-butter text-charcoal font-bold border-2 border-lavender-dark shadow-sm scale-110"
-                                  : isBleeding
-                                  ? "bg-lavender text-purple-700 font-semibold border border-lavender-dark/30 shadow-inner"
-                                  : isOvulating
-                                  ? "border border-dashed border-butter-dark bg-butter-light/50 text-charcoal font-bold"
-                                  : "text-charcoal"
-                              }`}
-                            >
-                              <span>{cell.day}</span>
-                              {cell.isCurrentMonth && isBleeding && !isSelected && (
-                                <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-                              )}
-                              {cell.isCurrentMonth && isOvulating && (
-                                <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-butter-dark animate-pulse"></span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-3 justify-center text-[8px] font-bold text-warm-gray uppercase tracking-wider">
-                      <div className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-butter border border-lavender-dark/50"></span>
-                        <span>Start Date</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-lavender border border-lavender-dark/30"></span>
-                        <span>Bleed Days</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full border border-dashed border-butter-dark bg-butter-light/50"></span>
-                        <span>Ovulation Window</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-{/* B. Core Analyzer Input Card */}
-          {cycleData && !isEditingCycle && (
-            <div className="glass-panel rounded-3xl p-6 border-lavender bg-white/60 space-y-6">
-              <form onSubmit={handleAnalyze} className="space-y-5">
-                {/* 1. Paste message */}
-                <div className="space-y-2">
-                  <label htmlFor="message-pasted" className="block text-[10px] font-bold text-charcoal uppercase tracking-wider">
-                    1) Paste the message that made you feel weird:
-                  </label>
-                  <textarea
-                    id="message-pasted"
-                    rows={4}
-                    value={messageText}
-                    onChange={(e) => {
-                      setMessageText(e.target.value);
-                      if (error) setError("");
-                    }}
-                    placeholder="Examples: 'If you actually cared about us, you wouldn't go out tonight' or 'You're misremembering, I never said that. You're being paranoid again.'..."
-                    className="w-full rounded-3xl border border-lavender p-4 text-sm focus:outline-none focus:ring-2 focus:ring-lavender-dark focus:border-transparent bg-white/70 text-charcoal placeholder-warm-gray/40 font-normal leading-relaxed"
-                    disabled={isAnalyzing}
-                  />
-                </div>
-
-                {/* 2. Who sent it */}
-                <div className="space-y-2">
-                  <label htmlFor="sender-label" className="block text-[10px] font-bold text-charcoal uppercase tracking-wider">
-                    2) Who sent this message? (e.g. boyfriend, boss, ex — no real names):
-                  </label>
-                  <input
-                    id="sender-label"
-                    type="text"
-                    value={senderLabel}
-                    onChange={(e) => {
-                      setSenderLabel(e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, ""));
-                      if (error) setError("");
-                    }}
-                    placeholder="e.g. boyfriend, boss, ex, sister"
-                    className="w-full rounded-3xl border border-lavender p-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-lavender-dark focus:border-transparent bg-white/70 text-charcoal placeholder-warm-gray/45 font-semibold"
-                    disabled={isAnalyzing}
-                  />
-                </div>
-
-                {error && (
-                  <p className="text-xs text-red-500 font-bold flex items-center gap-1.5 mt-2">
-                    <AlertCircle className="w-4 h-4 text-red-500 animate-pulse" />
-                    {error}
-                  </p>
-                )}
-
-                {/* Analyze Trigger */}
-                {!isAnalyzing && !analysisResult && (
-                  <div className="space-y-3">
-                    <button
-                      type="submit"
-                      className="w-full bg-butter hover:bg-butter-dark text-charcoal border border-butter-dark/50 font-bold py-3.5 rounded-3xl transition-all-300 shadow-md flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 cursor-pointer"
-                    >
-                      <Activity className="w-4.5 h-4.5 text-charcoal" />
-                      <span>Analyze Message & Sensitivity</span>
-                    </button>
-                    <p className="text-[10px] text-center text-warm-gray font-semibold">
-                      Ova will analyze this message factoring in your current <strong>{activePhaseDetails?.title}</strong>.
-                    </p>
-                  </div>
-                )}
-              </form>
-
-              {/* Loading State */}
-              {isAnalyzing && (
-                <div className="py-12 flex flex-col items-center justify-center space-y-4 animate-pulse-slow">
-                  <div className="relative w-16 h-16 flex items-center justify-center">
-                    <Flower className="w-12 h-12 text-emerald-400 animate-bounce" />
-                    <div className="absolute inset-0 border-4 border-t-lavender-dark border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-charcoal font-dm-sans">Ova is reading between the lines...</p>
-                    <p className="text-xs text-warm-gray mt-1 font-medium">Factoring in your cycle day {cycleState?.currentDay} ({currentPhase} phase)...</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Analysis Result Card */}
-              {analysisResult && (
-                <div className="animate-fade-in border border-lavender/80 bg-white rounded-3xl p-6 space-y-5 shadow-md shadow-lavender/10 relative overflow-hidden">
-                  <div className="absolute -right-8 -top-8 w-24 h-24 bg-butter/25 rounded-full blur-xl"></div>
-                  <div className="absolute -left-8 -bottom-8 w-24 h-24 bg-lavender/25 rounded-full blur-xl"></div>
-
-                  <div className="flex items-center justify-between border-b border-lavender/40 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">📝</span>
-                      <span className="text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-100 uppercase tracking-wide">
-                        Ova's Analysis
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-warm-gray font-bold uppercase tracking-wider bg-lavender-light border border-lavender/50 px-2.5 py-0.5 rounded-full">
-                      From: {senderLabel} • Day {cycleState?.currentDay}
-                    </span>
-                  </div>
-
-                  <div className="text-sm text-charcoal/90 leading-relaxed space-y-4 font-normal whitespace-pre-wrap">
-                    {analysisResult.split("\n\n").map((paragraph, index) => {
-                      if (paragraph.startsWith("###")) {
-                        return <h4 key={index} className="font-dm-sans font-bold text-base text-charcoal pt-2">{paragraph.replace("### ", "")}</h4>;
-                      }
-                      if (paragraph.startsWith("####")) {
-                        return <h5 key={index} className="font-dm-sans font-bold text-sm text-charcoal/90 uppercase tracking-wide pt-1">{paragraph.replace("#### ", "")}</h5>;
-                      }
-                      return <p key={index} className="text-charcoal/85">{paragraph}</p>;
-                    })}
-                  </div>
-
-                  <div className="flex flex-col gap-3 pt-2">
-                    <div className="flex gap-3">
-                      <button
-                        onClick={handleSaveAnalysis}
-                        className="flex-1 bg-butter hover:bg-butter-dark text-charcoal border border-butter-dark/50 font-bold py-2.5 rounded-2xl transition-all-300 text-xs flex items-center justify-center gap-2 hover:scale-102 shadow-sm cursor-pointer"
-                      >
-                        <ShieldCheck className="w-4 h-4 text-charcoal" />
-                        <span>Save to Reflection Log</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setMessageText("");
-                          setSenderLabel("");
-                          setAnalysisResult(null);
-                          setIsCurrentMessageToxic(false);
-                        }}
-                        className="px-4 py-2.5 border border-lavender/80 bg-white hover:bg-lavender-light/35 rounded-2xl text-xs font-bold text-warm-gray hover:text-charcoal transition-all-300 cursor-pointer"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                    {isCurrentMessageToxic && (
-                      <button
-                        onClick={() => setShowExitGuide(true)}
-                        className="w-full mt-2 py-3 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold rounded-2xl transition-all shadow-sm text-sm"
-                      >
-                        Need help getting out? 💜
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Right Column: Pattern Cards & Saved reflections */}
-        <div className="lg:col-span-5 space-y-6">
-          
-          {/* 1. Pattern Memory Card Section */}
-          <section className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Sparkles className="w-5 h-5 text-amber-500 animate-float" />
-              <h3 className="font-dm-sans font-bold text-base text-charcoal">Pattern Memory</h3>
-            </div>
-
-            {patternSenders.length === 0 ? (
-              <div className="glass-panel rounded-3xl p-5 text-center border-lavender bg-white/40 text-[11px] text-warm-gray leading-normal font-medium animate-fade-in">
-                🌻 Ova's tip: Analyze 5+ messages from the same sender label (like "boyfriend" or "boss") to unlock pattern recognition over time.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {patternSenders.map((sender) => {
-                  const count = senderGroups[sender].length;
-                  const patternText = patternSummaries[sender];
-                  const isLoading = !!loadingPatterns[sender];
-
-                  return (
-                    <div
-                      key={sender}
-                      className="glass-panel-yellow rounded-3xl p-5 border-butter space-y-3 animate-bloom"
-                    >
-                      <h4 className="font-dm-sans font-bold text-xs text-charcoal/90 flex items-center gap-1.5 uppercase tracking-wide">
-                        <span>🛡️</span>
-                        <span>Pattern Card: {sender}</span>
-                      </h4>
-                      <p className="text-xs text-charcoal/80 leading-normal">
-                        You've shared {count} messages from <strong>{sender}</strong>. Here's what we've noticed over time:
+                {/* Symptom Tracker Card */}
+                {cycleState && phaseVisual && (
+                  <div className="bg-white rounded-[40px] p-8 shadow-xl border border-lavender/20">
+                    <div className="flex flex-col mb-6">
+                      <h3 className="font-serif text-2xl font-bold uppercase tracking-tight">How do you feel today?</h3>
+                      <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface/40 mt-1 flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-emerald-500" /> Saved locally
                       </p>
-
-                      {patternText ? (
-                        <div className="text-xs text-charcoal/95 leading-relaxed bg-white/80 p-3.5 rounded-2xl border border-butter-dark/50 whitespace-pre-wrap font-medium">
-                          {patternText.split("\n\n").map((p, idx) => {
-                            // If it's the starter sentence, either strip it or just render it
-                            const cleanText = p.replace(/^You've shared.*?Here's what we've noticed over time:\s*/i, "");
-                            if (!cleanText) return null;
-                            return <p key={idx} className="mb-2 last:mb-0">{cleanText}</p>;
-                          })}
-                        </div>
-                      ) : isLoading ? (
-                        <div className="py-4 flex flex-col items-center justify-center space-y-2">
-                          <RefreshCw className="w-5 h-5 text-amber-500 animate-spin" />
-                          <span className="text-[10px] text-warm-gray font-semibold">Synthesizing behavioral trends...</span>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleRevealPatterns(sender)}
-                          className="w-full flex items-center justify-center space-x-2 py-2.5 bg-white hover:bg-butter-light border border-butter-dark/60 rounded-2xl text-[10px] font-bold text-charcoal transition-all-300 hover:scale-101 cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Reveal Behavioral Analysis</span>
-                        </button>
-                      )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
 
-          {/* 2. Reflection History list */}
-          <section className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-purple-400" />
-              <h3 className="font-dm-sans font-bold text-base text-charcoal">Reflection History</h3>
-            </div>
-
-            {savedAnalyses.length === 0 ? (
-              <div className="glass-panel rounded-3xl p-6 text-center border-dashed border-lavender/50 bg-white/30 text-xs text-warm-gray">
-                No logs saved yet. After running an analysis, click "Save to Reflection Log".
-              </div>
-            ) : (
-              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-                {savedAnalyses.map((item) => (
-                  <div
-                    key={item.id}
-                    className="glass-panel rounded-3xl p-4 border-lavender/40 bg-white/90 shadow-sm relative group hover:border-lavender transition-all-300"
-                  >
-                    <div className="flex justify-between items-start gap-4 mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[9px] uppercase font-bold tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
-                          {item.phase} Phase
-                        </span>
-                        {item.sender_label && (
-                          <span className="text-[9px] uppercase font-bold tracking-wider text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-butter-dark/50">
-                            {item.sender_label}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleDeleteAnalysis(item.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-600 transition-all duration-200 self-start"
-                        title="Delete reflection"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <span className="text-[10px] text-warm-gray font-semibold block">Message:</span>
-                        <p className="text-xs text-charcoal/80 italic">"{item.message.substring(0, 100)}{item.message.length > 100 ? "..." : ""}"</p>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setViewingAnalysis(item);
-                        }}
-                        className="w-full flex items-center justify-between p-2 rounded-2xl bg-lavender-light/35 border border-lavender/30 text-[10px] font-bold text-charcoal hover:bg-lavender transition-all-300"
-                      >
-                        <span>Review Full Analysis</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
+                    <div className="flex flex-wrap gap-2">
+                      {phaseVisual.symptoms?.map((symptom: string, idx: number) => {
+                        const isSelected = selectedSymptoms.includes(symptom);
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => toggleSymptom(symptom)}
+                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 ${isSelected
+                              ? 'bg-charcoal text-white shadow-md scale-105'
+                              : 'bg-surface-container hover:bg-lavender/40 text-on-surface/70'
+                              }`}
+                          >
+                            {symptom}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </section>
-        </div>
-      </div>
-
-      <div className="w-full max-w-5xl mx-auto mt-12"><CravePantrySection currentPhase={currentPhaseNormalized} /></div>
-      <div className="w-full max-w-5xl mx-auto mt-12"><InteractivePortrait /></div>
-
-      {/* Full Analysis Modal Overlay */}
-      {viewingAnalysis && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-lavender/50 relative">
-            <button
-              onClick={() => setViewingAnalysis(null)}
-              className="absolute top-5 right-5 p-2 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500 transition-colors cursor-pointer"
-            >
-              ✕
-            </button>
-            
-            <div className="flex items-center gap-2 mb-6">
-              <span className="text-xl">📝</span>
-              <h3 className="font-dm-sans font-bold text-xl text-charcoal">Analysis Review</h3>
             </div>
+          </div>
+        </section>
 
-            <div className="space-y-6">
-              <div className="bg-lavender-light/30 border border-lavender/40 rounded-2xl p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-warm-gray font-bold uppercase tracking-wider">Context</span>
-                  <span className="text-[9px] uppercase font-bold tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
-                    {viewingAnalysis.phase} Phase
-                  </span>
-                  {viewingAnalysis.sender_label && (
-                    <span className="text-[9px] uppercase font-bold tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-butter-dark/50">
-                      From: {viewingAnalysis.sender_label}
+        {/* 5. RHYTHM OF RESILIENCE */}
+        <section className="py-12 md:py-24">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="bg-white rounded-[60px] p-10 md:p-16 shadow-2xl border border-lavender/20">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-16">
+                <div>
+                  <h2 className="font-serif text-4xl font-bold">Rhythm of Resilience</h2>
+                  <p className="text-lg text-on-surface/40">Correlating biological capacity with communication subtext</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-hotpink"></div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Emotional Capacity</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-lavender"></div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Subtext Friction</span>
+                  </div>
+                </div>
+              </div>
+              <div className="relative h-[300px] w-full">
+                <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 300">
+                  <path d="M 0 50 C 150 20, 300 150, 500 100 S 850 280, 1000 280" fill="none" stroke="#FF3366" strokeLinecap="round" strokeWidth="6"></path>
+                  <path d="M 0 250 C 100 240, 400 50, 500 80 S 700 30, 1000 20" fill="none" stroke="#DED7FC" strokeDasharray="8 8" strokeLinecap="round" strokeWidth="4"></path>
+                  <circle className="chart-pulse" cx="150" cy="30" fill="#FF3366" r="8"></circle>
+                  <circle className="chart-pulse" cx="500" cy="100" fill="#FF3366" r="8"></circle>
+                  <circle className="chart-pulse" cx="850" cy="275" fill="#FF3366" r="8"></circle>
+                </svg>
+                <div className="flex justify-between mt-8">
+                  <div className="text-[10px] font-bold text-on-surface/20 uppercase">Day 1</div>
+                  <div className="text-[10px] font-bold text-on-surface/20 uppercase">Day 14 (Peak)</div>
+                  <div className="text-[10px] font-bold text-hotpink uppercase">Day 28 (Critical)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 6. REAL CLARITY FOR REAL PEOPLE */}
+        <section className="py-12 md:py-24">
+          <div className="max-w-5xl mx-auto px-6">
+            <div className="text-center mb-16 space-y-4">
+              <h2 className="font-serif text-4xl font-bold">Real Clarity for Real People</h2>
+              <div className="w-20 h-1 bg-hotpink/20 mx-auto rounded-full"></div>
+            </div>
+            <div className="space-y-8">
+              <div className="bg-surface-container-low p-10 rounded-[48px] border border-lavender/20 flex flex-col md:flex-row gap-10 items-center">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl flex-shrink-0">
+                  <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAokSb8daD9GWcAC_boR8sA4SqcBsNio6Mt308OfBKfu7ARUKWgAO2K603IQ5VcEPpaTNb1nMsquF-L-AjaHyMN5hpaAxhOOaXhRYwVASO2I4S58wgi8As-R5C0QeiwuflVpFUTUDPifEElYKNrKtpNtpPb6YhU1WQFumHv83XxOZT_WSKA353i3g5sozfI4ZodMLMdB4GwxFCdLKryEc2nL5bs6Non6Bpb2c-jy816QAysYQ_s-LOHAyI-qdVtLnlBs9XrG3zYnwQ" />
+                </div>
+                <div className="space-y-4">
+                  <p className="text-2xl font-serif italic text-on-surface/80 leading-relaxed">"I used to think I was just 'bad at boundaries' during certain weeks. Mension showed me it was actually my body's heightened sensitivity. Now I wait to reply until Ova helps me see the subtext clearly."</p>
+                  <div>
+                    <h5 className="font-bold text-sm uppercase tracking-widest"></h5>
+                    <p className="text-[10px] text-on-surface/40 font-bold">Product Manager •</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white p-10 rounded-[48px] border border-lavender/20 flex flex-col md:flex-row-reverse gap-10 items-center">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl flex-shrink-0">
+                  <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAY3gp7Eryh8Lm6GR2x0xk1I2M0fWzCkVIw9SSS1IavhclnIfOSN01xcLjRwYxD3vvg38WCUb-O3aCBfuM4FszJRXDVzkt1XYk4h3mZjobn7s3gmJvbonFqoegxzVqvXNrzy0rqInLGGg1RulpV8ue95Rah_0etCS8SWgfeF510gOHBlV7ntqb80s-1BTZZvMi1wszWCZ-miFo3ywvUTHrnRejY5oNCdEr5aFPmj49d1sbefxu6Sb6mf3c2-DvxqIzmIE69qbSpyZI" />
+                </div>
+                <div className="space-y-4 md:text-right">
+                  <p className="text-2xl font-serif italic text-on-surface/80 leading-relaxed">"Decoding the hidden aggression in professional feedback changed my career. Instead of reacting defensively, I lead with biological data and linguistic clarity."</p>
+                  <div>
+                    <h5 className="font-bold text-sm uppercase tracking-widest"></h5>
+                    <p className="text-[10px] text-on-surface/40 font-bold">Creative Director •</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 7. HOW IT WORKS */}
+        <section className="py-12 md:py-24">
+          <div className="max-w-4xl mx-auto px-6">
+            <div className="text-center mb-20">
+              <h2 className="font-serif text-5xl font-bold">How It Works</h2>
+            </div>
+            <div className="space-y-16">
+              <div className="relative pl-16 step-line">
+                <div className="absolute left-0 top-0 w-12 h-12 rounded-full bg-butter flex items-center justify-center font-bold text-primary shadow-lg z-10">1</div>
+                <h3 className="font-serif text-2xl font-bold mb-2">Log the Friction</h3>
+                <p className="text-on-surface/60">Upload a screenshot or paste text from any conversation that felt "off" or caused anxiety.</p>
+              </div>
+              <div className="relative pl-16 step-line">
+                <div className="absolute left-0 top-0 w-12 h-12 rounded-full bg-lavender flex items-center justify-center font-bold text-secondary shadow-lg z-10">2</div>
+                <h3 className="font-serif text-2xl font-bold mb-2">Analyze with Ova</h3>
+                <p className="text-on-surface/60">Our empathy-first AI scans for linguistic markers, power dynamics, and emotional manipulation.</p>
+              </div>
+              <div className="relative pl-16 step-line">
+                <div className="absolute left-0 top-0 w-12 h-12 rounded-full bg-hotpink text-white flex items-center justify-center font-bold shadow-lg z-10">3</div>
+                <h3 className="font-serif text-2xl font-bold mb-2">Align with Biology</h3>
+                <p className="text-on-surface/60">We overlay the analysis with your real-time hormonal data to filter out biological sensitivity.</p>
+              </div>
+              <div className="relative pl-16 step-line-last">
+                <div className="absolute left-0 top-0 w-12 h-12 rounded-full bg-charcoal text-white flex items-center justify-center font-bold shadow-lg z-10">4</div>
+                <h3 className="font-serif text-2xl font-bold mb-2">Thrive &amp; Respond</h3>
+                <p className="text-on-surface/60">Receive a custom action plan: a response script, a self-regulation tool, or a nourishment tip.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 8. NOURISHMENT GUIDE (CRAVE PANTRY) */}
+        <section className="py-12 md:py-24">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-16">
+              <h2 className="font-serif text-4xl font-bold">The Crave Pantry</h2>
+              <p className="text-on-surface/40 mt-2 mb-6 uppercase text-[10px] tracking-widest font-bold">Premium Biological Nourishment</p>
+              <button
+                onClick={() => setActiveTab("crave-pantry")}
+                className="inline-flex items-center gap-2 px-8 py-3 bg-charcoal text-white rounded-full text-sm font-bold shadow-lg hover:bg-black hover:scale-105 transition-all duration-300"
+              >
+                Enter the Pantry <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 cursor-pointer" onClick={() => setActiveTab("crave-pantry")}>
+              <div className="group relative overflow-hidden rounded-[40px] aspect-[4/5] bg-surface-container shadow-xl">
+                <img alt="Avocado" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHZ85hvcIqGQQt72RqOKKtm6NTYb07PQCihr3kJTUKWS0HKny_R9QcCvCTxPgWy3IMQdW1IBG0ZY5RaW_4ibK7JcZuEeEEs4iqUcfkcizxjK3ejW9FWOgWw9U6EXlHK7YW3PnnvmokBcrOClaPopUdov669Bf9s8G6ilaH2GkwJfEO2ZZEw3lVSToI2n-NFXP6-BvyeDcpPiTrufzmSZwk6EsUzdJ3CJ8GGFMTIC6EK2bRkuvaGmmfSsVhOxc5UJ1A1qkgZuG6c2Y" />
+                <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-transparent to-transparent flex flex-col justify-end p-8">
+                  <span className="text-butter text-[10px] font-bold uppercase tracking-widest mb-2">Luteal Stabilization</span>
+                  <h4 className="text-white font-serif text-2xl">Healthy Fats</h4>
+                  <p className="text-white/70 text-xs mt-2">Magnesium-rich sources to curb cortisol and stabilize mood shifts.</p>
+                </div>
+              </div>
+              <div className="group relative overflow-hidden rounded-[40px] aspect-[4/5] bg-surface-container shadow-xl">
+                <img alt="Berries" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdBLaqjd_nKhDOvd55pXr5vNTj_lLOJwageuLYBtwAJ9psGsWt59j-g9Wxz32tCYUylU2sQE_BiXqvfMDMi6XJZq38q8kze15VmuzHXaU4A998MIGhya93J8_Ra-QK4-xxNZwu4ZGCArV_E8dgGottW85Xk4EEf4FMzx03fw9NyUCTknVXeqOODTEEQCB5sha4H-kXMPUbGXI7BH3MlJHg-6glOmh9IDanW3WkV8h9UHvP8JllH6yUQCaSlkUQE_IeVqlYFFovLH8" />
+                <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-transparent to-transparent flex flex-col justify-end p-8">
+                  <span className="text-lavender text-[10px] font-bold uppercase tracking-widest mb-2">Follicular Energy</span>
+                  <h4 className="text-white font-serif text-2xl">Antioxidant Mix</h4>
+                  <p className="text-white/70 text-xs mt-2">Fueling social confidence with low-glycemic fruit pairings.</p>
+                </div>
+              </div>
+              <div className="group relative overflow-hidden rounded-[40px] aspect-[4/5] bg-surface-container shadow-xl">
+                <img alt="Tea" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeh2PG56WMKmyi3OyUUeYdxshAmQlB1loljTkulSt2fXfx6FwF28l4D7WvrRuybV1L8XUt_c4zz9Yhb_ql97lmhEQJ_6zuAxjam_TGvSpsDOKaltDAN3klQTpTC1DaF5UyhH-oJHpm6xFVT0LlbDdVIw1EzB6cI_fWk-sLoqahWeVzM9EqRqFhOn-Rk5IAhdX8Wa1OSOGm0wtTOJi4Z1wfE0RrUWoUYQEgEpMHzj5e_hu6m70gPtOGwavIS9bbzyoHA1cc-RA8Ih0" />
+                <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-transparent to-transparent flex flex-col justify-end p-8">
+                  <span className="text-hotpink-light text-[10px] font-bold uppercase tracking-widest mb-2">Ovulation Calm</span>
+                  <h4 className="text-white font-serif text-2xl">Herbal Rituals</h4>
+                  <p className="text-white/70 text-xs mt-2">Adaptogenic blends to manage peak energy and maintain focus.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 9. THE VISION */}
+        <section className="py-12 md:py-24">
+          <div className="max-w-7xl mx-auto px-12 py-16 bg-butter rounded-[60px] grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-8">
+              <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/30 text-primary text-[10px] font-bold uppercase tracking-[0.2em]">The Vision</div>
+              <h2 className="font-serif text-5xl md:text-7xl leading-[1.1] tracking-tight">Your brain is literally <span className="italic">rewiring</span> every week.</h2>
+              <p className="text-xl text-on-surface/70 leading-relaxed max-w-xl">
+                Mension isn't just a tracker. It's a bio-empathy layer for the modern world. We are building the future where biology and communication live in harmony.
+              </p>
+              <button className="px-10 py-5 bg-charcoal text-white rounded-full font-bold uppercase tracking-widest text-sm hover:bg-charcoal/90 transition-all shadow-xl">Join the Waitlist</button>
+            </div>
+            <div className="relative">
+              <div className="absolute -inset-10 bg-white/40 blur-3xl rounded-full"></div>
+              <div className="relative z-10 rounded-[60px] overflow-hidden shadow-2xl border-4 border-white bg-white p-4">
+                <InteractivePortrait />
+                <div className="absolute bottom-12 left-12 right-12 bg-white/80 backdrop-blur-md p-6 rounded-3xl border border-lavender/30 shadow-lg animate-float">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="material-symbols-outlined text-hotpink text-xl">security_update_good</span>
+                    <span className="font-bold text-[10px] uppercase tracking-widest text-on-surface">
+                      Safety Tip • {cycleState ? `Day ${cycleState.currentDay}` : 'Day 24'}
                     </span>
-                  )}
-                </div>
-                <p className="text-sm text-charcoal/80 italic border-l-2 border-lavender-dark pl-3 py-1">"{viewingAnalysis.message}"</p>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-charcoal uppercase tracking-wider">Ova's Insight</h4>
-                <div className="text-sm text-charcoal/90 leading-relaxed space-y-3 whitespace-pre-wrap">
-                  {viewingAnalysis.result.split("\n\n").map((paragraph, index) => {
-                    if (paragraph.startsWith("###")) {
-                      return <h5 key={index} className="font-dm-sans font-bold text-base text-charcoal pt-2">{paragraph.replace("### ", "")}</h5>;
-                    }
-                    if (paragraph.startsWith("####")) {
-                      return <h6 key={index} className="font-dm-sans font-bold text-sm text-charcoal/90 uppercase tracking-wide pt-1">{paragraph.replace("#### ", "")}</h6>;
-                    }
-                    return <p key={index} className="text-charcoal/95 font-medium">{paragraph}</p>;
-                  })}
+                  </div>
+                  <p className="text-sm font-medium text-on-surface/80">"Wait 2 hours before replying. Your cortisol is spiking—protect your peace."</p>
                 </div>
               </div>
-            </div>
-
-            <div className="mt-8 pt-4 border-t border-lavender/30 flex justify-end">
-              <button
-                onClick={() => setViewingAnalysis(null)}
-                className="px-6 py-2.5 bg-butter hover:bg-butter-dark text-charcoal font-bold rounded-2xl transition-all shadow-sm cursor-pointer"
-              >
-                Close Review
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        </section>
 
-      {/* Safe Exit Guide Modal */}
-      {showExitGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/50 backdrop-blur-md animate-fade-in">
-          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-red-100 relative">
-            <button
-              onClick={() => setShowExitGuide(false)}
-              className="absolute top-5 right-5 p-2 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500 transition-colors cursor-pointer"
-            >
-              ✕
-            </button>
-            
-            <div className="flex items-center gap-2 mb-6">
-              <ShieldCheck className="w-6 h-6 text-purple-600" />
-              <h3 className="font-dm-sans font-bold text-2xl text-charcoal">Safe Exit Guide</h3>
-            </div>
-            
-            <p className="text-sm text-charcoal/80 mb-8 leading-relaxed">
-              If you're feeling unsafe or realizing it's time to leave, you don't have to do it alone. Here are practical, step-by-step actions you can take to protect yourself. Take what you need, at your own pace.
-            </p>
-
-            <div className="space-y-6">
-              <div className="bg-purple-50/50 border border-purple-100 p-5 rounded-2xl">
-                <h4 className="font-bold text-purple-900 mb-2 flex items-center gap-2">
-                  <span className="bg-purple-200 text-purple-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
-                  Document Evidence Safely
-                </h4>
-                <p className="text-sm text-charcoal/80 leading-relaxed">
-                  Take screenshots of manipulative or threatening messages. Email them to a secure, hidden account or send them to a trusted friend. Delete the evidence from your phone if you suspect your device is being monitored.
-                </p>
-              </div>
-
-              <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-2xl">
-                <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
-                  <span className="bg-blue-200 text-blue-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
-                  Tell a Trusted Person
-                </h4>
-                <p className="text-sm text-charcoal/80 leading-relaxed">
-                  Abuse thrives in isolation. Pick one trusted person—a friend, sister, colleague, or professional—and tell them the truth about what is happening. Establishing a code word for emergencies can be life-saving.
-                </p>
-              </div>
-
-              <div className="bg-green-50/50 border border-green-100 p-5 rounded-2xl">
-                <h4 className="font-bold text-green-900 mb-2 flex items-center gap-2">
-                  <span className="bg-green-200 text-green-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
-                  Financial Independence
-                </h4>
-                <p className="text-sm text-charcoal/80 leading-relaxed">
-                  Start setting aside emergency cash or open a secret bank account if you can safely do so. Gather essential documents (passports, Aadhar card, banking details, property papers) and keep them in a safe location outside your home.
-                </p>
-              </div>
-
-              <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
-                <h4 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
-                  <span className="bg-amber-200 text-amber-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span>
-                  Safety Planning
-                </h4>
-                <p className="text-sm text-charcoal/80 leading-relaxed">
-                  Identify the safest rooms in your house (avoid kitchens or rooms with weapons). Plan an escape route. Turn off location sharing on your phone and social media apps. If you fear immediate violence, do not confront them; leave when they are not home.
-                </p>
-              </div>
-
-              <div className="bg-red-50/50 border border-red-100 p-5 rounded-2xl">
-                <h4 className="font-bold text-red-900 mb-3 flex items-center gap-2">
-                  <span className="bg-red-200 text-red-800 w-6 h-6 rounded-full flex items-center justify-center text-xs">5</span>
-                  Professional Help (India)
-                </h4>
-                <div className="space-y-3">
-                  <div className="bg-white p-3 rounded-xl border border-red-100 shadow-sm flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-charcoal block text-sm">National Commission for Women</span>
-                      <span className="text-xs text-warm-gray">24/7 Helpline for women in distress</span>
-                    </div>
-                    <a href="tel:7827170170" className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200">7827170170</a>
+        {/* 10. DEEP FOOTER */}
+        <footer className="bg-[#A8005A] text-white pt-32 pb-12">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-20">
+              <div className="col-span-1 md:col-span-2 space-y-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
+                    <span className="material-symbols-outlined text-hotpink font-bold text-3xl">bubble_chart</span>
                   </div>
-                  <div className="bg-white p-3 rounded-xl border border-red-100 shadow-sm flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-charcoal block text-sm">iCall Helpline</span>
-                      <span className="text-xs text-warm-gray">Psychosocial counseling (Mon-Sat)</span>
-                    </div>
-                    <a href="tel:9152987821" className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200">9152987821</a>
+                  <span className="font-serif text-4xl font-bold tracking-tight">Mension</span>
+                </div>
+                <p className="text-white/90 text-xl max-w-sm leading-relaxed font-serif italic">
+                  "Helping you find clarity in the noise, one biological cycle at a time."
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20">
+                    <span className="material-symbols-outlined text-white text-lg">verified_user</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Privacy Protected</span>
                   </div>
-                  <div className="bg-white p-3 rounded-xl border border-red-100 shadow-sm flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-charcoal block text-sm">Vandrevala Foundation</span>
-                      <span className="text-xs text-warm-gray">24/7 Mental health crisis support</span>
-                    </div>
-                    <a href="tel:9999666555" className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200">9999 666 555</a>
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20">
+                    <span className="material-symbols-outlined text-white text-lg">lock</span>
                   </div>
                 </div>
               </div>
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/60">Product</h4>
+                <ul className="space-y-4 text-sm font-medium">
+                  <li><a className="hover:text-butter transition-colors" href="#">Analyzer Pro</a></li>
+                  <li><a className="hover:text-butter transition-colors" href="#">Cycle Suite</a></li>
+                  <li><a className="hover:text-butter transition-colors" href="#">Methodology</a></li>
+                </ul>
+              </div>
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/60">Company</h4>
+                <ul className="space-y-4 text-sm font-medium">
+                  <li><a className="hover:text-butter transition-colors" href="#">Science</a></li>
+                  <li><a className="hover:text-butter transition-colors" href="#">Privacy Policy</a></li>
+                  <li><a className="hover:text-butter transition-colors" href="#">Contact</a></li>
+                </ul>
+              </div>
             </div>
-
-            <div className="mt-8 pt-4 border-t border-lavender/30 flex justify-end">
-              <button
-                onClick={() => setShowExitGuide(false)}
-                className="px-6 py-2.5 bg-lavender-light hover:bg-lavender text-charcoal font-bold rounded-2xl transition-all shadow-sm cursor-pointer"
-              >
-                Close Guide
-              </button>
+            <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-8">
+              <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/50">© 2026 Mension • Built for biological clarity</p>
+              <div className="flex gap-6 text-white/50">
+                <span className="material-symbols-outlined cursor-pointer hover:text-white transition-colors">brand_awareness</span>
+                <span className="material-symbols-outlined cursor-pointer hover:text-white transition-colors">social_leaderboard</span>
+                <span className="material-symbols-outlined cursor-pointer hover:text-white transition-colors">language</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        </footer>
+      </main>
     </div>
   );
 }
