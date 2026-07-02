@@ -419,8 +419,11 @@ export default function BreathingPacer() {
                   </div>
                 </div>
 
-                <div className="mt-12 text-center h-16">
+                <div className="mt-12 text-center h-20 flex flex-col justify-center items-center">
                   <p className="font-serif italic text-2xl text-[#1c1b21] font-semibold mb-2">{activePhase.instruction}</p>
+                  <p className="text-xs md:text-sm text-[#484552] font-medium tracking-wide max-w-[250px] md:max-w-md mx-auto opacity-70">
+                    Listen to the soft tones while you practice breathing to clear your mind.
+                  </p>
                 </div>
               </div>
 

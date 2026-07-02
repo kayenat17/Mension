@@ -1148,6 +1148,28 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                 session={session} 
               />
             </div>
+            
+            {/* FEEDBACK BANNER */}
+            <div className="mt-16 w-full bg-butter/30 border border-butter/50 rounded-3xl p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 rounded-full bg-butter flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                  💌
+                </div>
+                <div>
+                  <h3 className="font-serif text-2xl font-bold text-charcoal mb-1">Help Mension Grow</h3>
+                  <p className="text-on-surface/70 font-sans text-sm max-w-md">Your experience shapes our journey. Share your thoughts, suggest new features, or just tell us how Ova is doing!</p>
+                </div>
+              </div>
+              <a 
+                href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="shrink-0 px-8 py-3.5 bg-hotpink text-white font-bold rounded-full shadow-[0_4px_14px_rgba(255,105,180,0.3)] hover:scale-105 transition-transform"
+              >
+                Share Feedback
+              </a>
+            </div>
+            
           </div>
         </section>
 

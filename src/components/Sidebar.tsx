@@ -33,12 +33,33 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
 
   return (
     <>
-      {/* Mobile Top Header (Just for Logo) */}
-      <header 
-        className="md:hidden flex items-center justify-center px-6 py-4 bg-white sticky top-0 z-40 w-full cursor-pointer hover:opacity-80 transition-opacity"
-        onClick={() => setActiveTab('dashboard')}
-      >
-        <MensionLogo className="text-2xl text-charcoal" />
+      {/* Mobile Top Header */}
+      <header className="md:hidden flex items-center justify-between px-6 py-4 bg-white sticky top-0 z-40 w-full border-b border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <div className="w-8"></div> {/* Spacer for centering */}
+        <div onClick={() => setActiveTab('dashboard')} className="cursor-pointer hover:opacity-80 transition-opacity">
+          <MensionLogo className="text-2xl text-charcoal" />
+        </div>
+        
+        {/* Right: Profile/Auth Section */}
+        <div className="flex items-center shrink-0 w-8 justify-end">
+          {isLoggedIn ? (
+            <button
+              onClick={handleSignOut}
+              className="text-warm-gray hover:text-red-500 transition-all duration-200"
+              title="Sign Out"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          ) : (
+            <button
+              onClick={onLoginClick}
+              className="text-charcoal hover:text-lavender-dark transition-all duration-200"
+              title="Sign In"
+            >
+              <User className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Mobile Bottom Navigation (Pinterest style) */}
