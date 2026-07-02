@@ -46,7 +46,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   // Period Tracker States
   const [cycleData, setCycleData] = useState<CycleData | null>(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("ova-cycle-tracker");
+      const stored = localStorage.getItem("clara-cycle-tracker");
       if (stored) {
         try { return JSON.parse(stored); } catch (e) { }
       }
@@ -140,7 +140,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
 
       if (dataToUse.length === 0) {
         // Fallback to local logs array if Supabase failed or empty
-        const storedLogs = localStorage.getItem("ova-cycle-logs");
+        const storedLogs = localStorage.getItem("clara-cycle-logs");
         if (storedLogs) {
           try {
             dataToUse = JSON.parse(storedLogs);
@@ -191,7 +191,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
 
       } else {
         // Fallback for offline / missing Supabase: load array of past logs
-        const storedLogs = localStorage.getItem("ova-cycle-logs");
+        const storedLogs = localStorage.getItem("clara-cycle-logs");
         if (storedLogs) {
           try {
             const parsedLogs = JSON.parse(storedLogs);
@@ -206,7 +206,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         }
 
         // If there's no data in Supabase, but we have local single cycle data, push it to Supabase
-        const stored = localStorage.getItem("ova-cycle-tracker");
+        const stored = localStorage.getItem("clara-cycle-tracker");
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
@@ -253,7 +253,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
     }
 
     // Load logged symptoms
-    const savedSymptoms = localStorage.getItem("ova-logged-symptoms");
+    const savedSymptoms = localStorage.getItem("clara-logged-symptoms");
     if (savedSymptoms) {
       try {
         setSelectedSymptoms(JSON.parse(savedSymptoms));
@@ -267,7 +267,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
 
   // Persist symptoms when changed
   useEffect(() => {
-    localStorage.setItem("ova-logged-symptoms", JSON.stringify(selectedSymptoms));
+    localStorage.setItem("clara-logged-symptoms", JSON.stringify(selectedSymptoms));
   }, [selectedSymptoms]);
 
   const phaseVisuals = {
@@ -448,7 +448,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
     };
 
     setCycleData(newData);
-    localStorage.setItem("ova-cycle-tracker", JSON.stringify(newData));
+    localStorage.setItem("clara-cycle-tracker", JSON.stringify(newData));
     setIsEditingCycle(false);
     setError("");
   };
@@ -485,7 +485,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   };
 
   const loadLocalAnalyses = () => {
-    const saved = localStorage.getItem("ova-saved-analyses");
+    const saved = localStorage.getItem("clara-saved-analyses");
     if (saved) {
       setSavedAnalyses(JSON.parse(saved));
     } else {
@@ -531,7 +531,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   // Expose current phase globally for other tabs like Mind Notes
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("ova-current-phase", currentPhaseNormalized);
+      localStorage.setItem("clara-current-phase", currentPhaseNormalized);
     }
   }, [currentPhaseNormalized]);
 
@@ -650,7 +650,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   const saveLocally = (newSave: SavedAnalysis) => {
     const updated = [newSave, ...savedAnalyses];
     setSavedAnalyses(updated);
-    localStorage.setItem("ova-saved-analyses", JSON.stringify(updated));
+    localStorage.setItem("clara-saved-analyses", JSON.stringify(updated));
   };
 
   const handleDeleteAnalysis = async (id: string | number) => {
@@ -671,7 +671,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   const deleteLocally = (id: string | number) => {
     const updated = savedAnalyses.filter((a) => a.id !== id);
     setSavedAnalyses(updated);
-    localStorage.setItem("ova-saved-analyses", JSON.stringify(updated));
+    localStorage.setItem("clara-saved-analyses", JSON.stringify(updated));
   };
 
   // Group analyses by sender label to compute counts and compile pattern history
@@ -757,7 +757,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
       });
       setCycleLogs(currentLogs);
       if (typeof window !== 'undefined') {
-        localStorage.setItem("ova-cycle-logs", JSON.stringify(currentLogs));
+        localStorage.setItem("clara-cycle-logs", JSON.stringify(currentLogs));
       }
     }
 
@@ -769,7 +769,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
     setCycleData(newData);
     setLmpInput(newLmp);
     if (typeof window !== 'undefined') {
-      localStorage.setItem("ova-cycle-tracker", JSON.stringify(newData));
+      localStorage.setItem("clara-cycle-tracker", JSON.stringify(newData));
     }
 
     if (session) {
@@ -793,7 +793,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
     setCycleData(defaultData);
     setLmpInput(defaultData.lmp);
     if (typeof window !== 'undefined') {
-      localStorage.setItem("ova-cycle-tracker", JSON.stringify(defaultData));
+      localStorage.setItem("clara-cycle-tracker", JSON.stringify(defaultData));
     }
 
     if (session) {

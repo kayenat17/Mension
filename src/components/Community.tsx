@@ -58,15 +58,15 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
 
   useEffect(() => {
     // Setup Alias
-    let savedAlias = localStorage.getItem("ova-community-alias");
+    let savedAlias = localStorage.getItem("clara-community-alias");
     if (!savedAlias) {
       savedAlias = generateAlias();
-      localStorage.setItem("ova-community-alias", savedAlias);
+      localStorage.setItem("clara-community-alias", savedAlias);
     }
     setAlias(savedAlias);
 
     // Load Reacted Posts from local storage to prevent multi-voting
-    const savedReactions = localStorage.getItem("ova-community-reactions");
+    const savedReactions = localStorage.getItem("clara-community-reactions");
     if (savedReactions) {
       try {
         setReactedPosts(JSON.parse(savedReactions));
@@ -145,7 +145,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
 
   const getPhaseFromLocalStorage = () => {
     // Try to calculate from cycle tracker
-    const savedCycle = localStorage.getItem("ova-cycle-tracker");
+    const savedCycle = localStorage.getItem("clara-cycle-tracker");
     if (savedCycle) {
       try {
         const parsed = JSON.parse(savedCycle);
@@ -154,7 +154,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
       } catch (e) {}
     }
     // Fallback to explicit phase selection
-    return localStorage.getItem("ova-cycle-phase") || "general";
+    return localStorage.getItem("clara-cycle-phase") || "general";
   };
 
   const handlePost = async (e: React.FormEvent) => {
@@ -199,7 +199,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
     // Update local storage
     const newReactions = { ...reactedPosts, [postId]: reactionType };
     setReactedPosts(newReactions);
-    localStorage.setItem("ova-community-reactions", JSON.stringify(newReactions));
+    localStorage.setItem("clara-community-reactions", JSON.stringify(newReactions));
 
     // Update Supabase via RPC (function) or direct update
     // Since we don't have an RPC function set up yet, we'll do a read-modify-write

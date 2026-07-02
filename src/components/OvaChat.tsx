@@ -28,7 +28,7 @@ export default function OvaChat() {
   // Initial setup and health check
   useEffect(() => {
     // Load cycle phase preference
-    const savedPhase = localStorage.getItem("ova-cycle-phase");
+    const savedPhase = localStorage.getItem("clara-cycle-phase");
     if (savedPhase) {
       setCyclePhase(savedPhase);
     }
@@ -52,7 +52,7 @@ export default function OvaChat() {
       });
 
     // Load Chat History
-    const savedChat = localStorage.getItem("ova-chat-history");
+    const savedChat = localStorage.getItem("clara-chat-history");
     if (savedChat) {
       const parsed = JSON.parse(savedChat);
       const formatted = parsed.map((m: any) => ({
@@ -75,7 +75,7 @@ export default function OvaChat() {
   // Save chat history
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem("ova-chat-history", JSON.stringify(messages));
+      localStorage.setItem("clara-chat-history", JSON.stringify(messages));
     }
   }, [messages]);
 
@@ -204,7 +204,7 @@ export default function OvaChat() {
           timestamp: new Date(),
         },
       ]);
-      localStorage.removeItem("ova-chat-history");
+      localStorage.removeItem("clara-chat-history");
     }
   };
 
@@ -236,7 +236,7 @@ export default function OvaChat() {
               value={cyclePhase}
               onChange={(e) => {
                 setCyclePhase(e.target.value);
-                localStorage.setItem("ova-cycle-phase", e.target.value);
+                localStorage.setItem("clara-cycle-phase", e.target.value);
               }}
               className="text-xs bg-lavender-light border border-lavender rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-lavender-dark text-charcoal font-semibold"
             >
