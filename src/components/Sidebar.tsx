@@ -70,32 +70,39 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
               </button>
               
               {isAccountMenuOpen && (
-                <div className="fixed top-[72px] right-4 w-48 bg-white rounded-xl shadow-lg border border-black/5 py-2 z-[100] flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b border-black/5 mb-1">
-                    <p className="text-xs font-medium text-warm-gray truncate">{session.user?.email}</p>
+                <>
+                  <div 
+                    className="fixed inset-0 z-[90]" 
+                    onClick={() => setIsAccountMenuOpen(false)}
+                    onTouchStart={() => setIsAccountMenuOpen(false)}
+                  />
+                  <div className="fixed top-[72px] right-4 w-48 bg-white rounded-xl shadow-lg border border-black/5 py-2 z-[100] flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-2 border-b border-black/5 mb-1">
+                      <p className="text-xs font-medium text-warm-gray truncate">{session.user?.email}</p>
+                    </div>
+                    
+                    <a 
+                      href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-2 px-4 py-2.5 text-sm text-charcoal hover:bg-black/5 transition-colors relative z-10"
+                    >
+                      <MessageSquare className="w-4 h-4 text-primary" />
+                      <span>Send Feedback</span>
+                    </a>
+                    
+                    <button
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        handleSignOut();
+                      }}
+                      className="flex items-center space-x-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors w-full text-left relative z-10"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
                   </div>
-                  
-                  <a 
-                    href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center space-x-2 px-4 py-2.5 text-sm text-charcoal hover:bg-black/5 transition-colors"
-                  >
-                    <MessageSquare className="w-4 h-4 text-primary" />
-                    <span>Send Feedback</span>
-                  </a>
-                  
-                  <button
-                    onClick={() => {
-                      setIsAccountMenuOpen(false);
-                      handleSignOut();
-                    }}
-                    className="flex items-center space-x-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors w-full text-left"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Sign Out</span>
-                  </button>
-                </div>
+                </>
               )}
             </div>
           ) : (

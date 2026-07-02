@@ -1136,41 +1136,22 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                 </div>
               </div>
             </div>
-            
+
             {/* SAVED ANALYSES & PATTERNS GRID */}
             <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
-              <ReflectionHistory 
-                analyses={savedAnalyses} 
-                onDelete={handleDeleteAnalysis} 
-                onView={handleViewAnalysis} 
+              <ReflectionHistory
+                analyses={savedAnalyses}
+                onDelete={handleDeleteAnalysis}
+                onView={handleViewAnalysis}
               />
-              <PatternMemory 
-                savedAnalyses={savedAnalyses} 
-                session={session} 
+              <PatternMemory
+                savedAnalyses={savedAnalyses}
+                session={session}
               />
             </div>
-            
-            {/* FEEDBACK BANNER */}
-            <div className="mt-16 w-full bg-butter/30 border border-butter/50 rounded-3xl p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-full bg-butter flex items-center justify-center text-2xl shrink-0 shadow-inner">
-                  💌
-                </div>
-                <div>
-                  <h3 className="font-serif text-2xl font-bold text-charcoal mb-1">Help Mension Grow</h3>
-                  <p className="text-on-surface/70 font-sans text-sm max-w-md">Your experience shapes our journey. Share your thoughts, suggest new features, or just tell us how Ova is doing!</p>
-                </div>
-              </div>
-              <a 
-                href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="shrink-0 px-8 py-3.5 bg-hotpink text-white font-bold rounded-full shadow-[0_4px_14px_rgba(255,105,180,0.3)] hover:scale-105 transition-transform"
-              >
-                Share Feedback
-              </a>
-            </div>
-            
+
+            <FeedbackBanner />
+
           </div>
         </section>
 
@@ -1460,7 +1441,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
               <div className="relative pl-16 step-line">
                 <div className="absolute left-0 top-0 w-12 h-12 rounded-full bg-butter flex items-center justify-center font-bold text-primary shadow-lg z-10">1</div>
                 <h3 className="font-serif text-2xl font-bold mb-2">Log the Friction</h3>
-                <p className="text-on-surface/60">Upload a screenshot or paste text from any conversation that felt "off" or caused anxiety.</p>
+                <p className="text-on-surface/60">Paste text from any conversation that felt "off" or caused anxiety.</p>
               </div>
               <div className="relative pl-16 step-line">
                 <div className="absolute left-0 top-0 w-12 h-12 rounded-full bg-lavender flex items-center justify-center font-bold text-secondary shadow-lg z-10">2</div>
@@ -1536,9 +1517,9 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                 <button className="px-10 py-5 bg-charcoal text-white rounded-full font-bold uppercase tracking-widest text-sm hover:bg-charcoal/90 transition-all shadow-xl w-full sm:w-auto">
                   Join the Waitlist
                 </button>
-                <a 
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform" 
-                  target="_blank" 
+                <a
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="px-10 py-5 bg-white text-charcoal border-2 border-charcoal rounded-full font-bold uppercase tracking-widest text-sm hover:bg-charcoal/5 transition-all shadow-lg w-full sm:w-auto text-center flex items-center justify-center gap-2"
                 >
