@@ -325,7 +325,7 @@ export default function BreathingPacer() {
             to { transform: translate(50px, 100px) scale(1.1); }
         }
         
-        .breathing-circle-outer {
+        .breathing-circle-outer {\n            border-radius: 50%;\n            will-change: transform;\n            -webkit-backface-visibility: hidden;\n            backface-visibility: hidden;\n            transform: translateZ(0);
             background: linear-gradient(135deg, #e6deff 0%, #ffd9e2 50%, #ede4a3 100%);
             animation: pulse-ring 4s ease-in-out infinite;
         }
@@ -412,7 +412,7 @@ export default function BreathingPacer() {
 
               {/* Dynamic Breathing Circle */}
               <div className="flex-grow flex flex-col items-center justify-center w-full py-8 relative">
-                <div className={`w-64 h-64 md:w-72 md:h-72 rounded-full p-2 breathing-circle-outer transition-transform duration-1000 ${isPlaying && activePhase.name === 'Inhale' ? 'scale-110' : (isPlaying && activePhase.name === 'Exhale' ? 'scale-90' : 'scale-100')}`}>
+                <div className={`w-48 h-48 md:w-72 md:h-72 rounded-full p-2 breathing-circle-outer transition-transform duration-1000 ${isPlaying && activePhase.name === 'Inhale' ? 'scale-110' : (isPlaying && activePhase.name === 'Exhale' ? 'scale-90' : 'scale-100')}`}>
                   <div className="w-full h-full rounded-full breathing-circle-inner flex items-center justify-center flex-col">
                     <span className="font-serif italic text-2xl text-[#484552] font-medium">{activePhase.name}</span>
                     <span className="font-serif text-7xl text-[#614eb2] font-bold">{secondsRemaining}s</span>
@@ -440,6 +440,11 @@ export default function BreathingPacer() {
                   <RotateCcw className="w-6 h-6" />
                 </button>
               </div>
+            </div>
+            
+            {/* Vibe Radio moved here */}
+            <div className="mt-8">
+              <VibeRadio />
             </div>
           </div>
 
@@ -515,11 +520,11 @@ export default function BreathingPacer() {
 
         </div>
 
-        {/* Row 2: Mood Mural & Vibe Radio */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+        {/* Row 2: Mood Mural */}
+        <div className="grid grid-cols-1 gap-8 lg:gap-10">
 
           {/* Mood Mural (Canvas) */}
-          <div className="lg:col-span-8">
+          <div className="w-full">
             <div className="glass-card rounded-[32px] p-8 md:p-10 glow-yellow relative overflow-hidden h-full group">
               <div className="relative z-10 flex flex-col h-full">
                 <div className="flex items-center space-x-3 mb-4">
@@ -543,11 +548,6 @@ export default function BreathingPacer() {
                 <span className="material-symbols-outlined text-[120px] rotate-12">draw</span>
               </div>
             </div>
-          </div>
-
-          {/* Vibe Radio */}
-          <div className="lg:col-span-4">
-            <VibeRadio />
           </div>
 
         </div>
