@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Home, HeartHandshake, Wind, User, LogOut, Users, Flame, ShoppingBag } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Home, HeartHandshake, Wind, User, LogOut, Users, Flame, ShoppingBag, MessageSquare } from "lucide-react";
 import { supabase } from "@/utils/supabaseClient";
 import MensionLogo from "@/components/MensionLogo";
 
@@ -21,6 +21,23 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
     { id: "crave-pantry", label: "Crave Pantry", icon: ShoppingBag },
     { id: "breathing", label: "Calm Space", icon: Wind },
   ];
+
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsAccountMenuOpen(false);
+      }
+    };
+    if (isAccountMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isAccountMenuOpen]);
 
   const handleSignOut = async () => {
     if (confirm("Are you sure you want to sign out?")) {
@@ -43,13 +60,45 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
         {/* Right: Profile/Auth Section */}
         <div className="flex items-center shrink-0 w-8 justify-end">
           {isLoggedIn ? (
-            <button
-              onClick={handleSignOut}
-              className="text-warm-gray hover:text-red-500 transition-all duration-200"
-              title="Sign Out"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
+                className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-charcoal hover:bg-black/10 transition-colors"
+                title="Account"
+              >
+                <User className="w-5 h-5" />
+              </button>
+              
+              {isAccountMenuOpen && (
+                <div className="absolute top-10 right-0 w-48 bg-white rounded-xl shadow-lg border border-black/5 py-2 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-black/5 mb-1">
+                    <p className="text-xs font-medium text-warm-gray truncate">{session.user?.email}</p>
+                  </div>
+                  
+                  <a 
+                    href="https://forms.gle/zNXXR7bK7PzyyRDa7" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 px-4 py-2.5 text-sm text-charcoal hover:bg-black/5 transition-colors"
+                    onClick={() => setIsAccountMenuOpen(false)}
+                  >
+                    <MessageSquare className="w-4 h-4 text-primary" />
+                    <span>Send Feedback</span>
+                  </a>
+                  
+                  <button
+                    onClick={() => {
+                      setIsAccountMenuOpen(false);
+                      handleSignOut();
+                    }}
+                    className="flex items-center space-x-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors w-full text-left"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <button
               onClick={onLoginClick}
@@ -123,17 +172,43 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
         {/* Right: Profile/Auth Section */}
         <div className="flex items-center shrink-0">
           {isLoggedIn ? (
-            <div className="flex items-center space-x-4 bg-black/5 px-4 py-2 rounded-full">
-              <span className="text-xs font-bold text-charcoal truncate max-w-[150px]" title={userEmail}>
-                {userEmail}
-              </span>
+            <div className="relative" ref={menuRef}>
               <button
-                onClick={handleSignOut}
-                className="text-warm-gray hover:text-red-500 transition-all duration-200"
-                title="Sign Out"
+                onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
+                className="flex items-center space-x-3 bg-black/5 hover:bg-black/10 px-4 py-2 rounded-full transition-colors"
+                title="Account Options"
               >
-                <LogOut className="w-4 h-4" />
+                <User className="w-4 h-4 text-charcoal" />
+                <span className="text-xs font-bold text-charcoal truncate max-w-[150px]" title={userEmail}>
+                  {userEmail}
+                </span>
               </button>
+              
+              {isAccountMenuOpen && (
+                <div className="absolute top-12 right-0 w-48 bg-white rounded-xl shadow-lg border border-black/5 py-2 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <a 
+                    href="https://forms.gle/zNXXR7bK7PzyyRDa7" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 px-4 py-2.5 text-sm text-charcoal hover:bg-black/5 transition-colors"
+                    onClick={() => setIsAccountMenuOpen(false)}
+                  >
+                    <MessageSquare className="w-4 h-4 text-primary" />
+                    <span>Send Feedback</span>
+                  </a>
+                  
+                  <button
+                    onClick={() => {
+                      setIsAccountMenuOpen(false);
+                      handleSignOut();
+                    }}
+                    className="flex items-center space-x-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors w-full text-left"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <button

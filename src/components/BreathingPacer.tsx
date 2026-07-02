@@ -327,20 +327,23 @@ export default function BreathingPacer() {
         
         .breathing-circle-outer {
             border-radius: 50%;
-            will-change: transform;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            -webkit-transform: translate3d(0,0,0);
-            transform: translate3d(0,0,0);
-            -webkit-perspective: 1000;
-            perspective: 1000;
-            outline: 1px solid transparent;
             background: linear-gradient(135deg, #e6deff 0%, #ffd9e2 50%, #ede4a3 100%);
+            position: relative;
+            z-index: 1;
+        }
+        .breathing-circle-outer::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%;
+            background: rgba(157, 138, 242, 0.15);
+            z-index: -1;
             animation: pulse-ring 4s ease-in-out infinite;
+            pointer-events: none;
         }
         @keyframes pulse-ring {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(157, 138, 242, 0.4); }
-            50% { transform: scale(1.05); box-shadow: 0 0 50px 20px rgba(157, 138, 242, 0.2); }
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 0; }
         }
         .breathing-circle-inner {
             background: rgba(255, 255, 255, 0.85);
