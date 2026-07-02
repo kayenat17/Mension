@@ -17,6 +17,19 @@ export default function Home() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
 
+  // Load saved tab on mount
+  useEffect(() => {
+    const savedTab = localStorage.getItem("mension-active-tab");
+    if (savedTab) {
+      setActiveTab(savedTab);
+    }
+  }, []);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    localStorage.setItem("mension-active-tab", tab);
+  };
+
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
 
@@ -45,7 +58,7 @@ export default function Home() {
   const renderActiveComponent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <Dashboard setActiveTab={setActiveTab} session={session} onLoginClick={() => setIsAuthOpen(true)} />;
+        return <Dashboard setActiveTab={handleTabChange} session={session} onLoginClick={() => setIsAuthOpen(true)} />;
       case "community":
         return <Community session={session} onLoginClick={() => setIsAuthOpen(true)} />;
       case "chat":
@@ -89,7 +102,7 @@ export default function Home() {
       {/* Main Container */}
       <Sidebar 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+        setActiveTab={handleTabChange} 
         session={session} 
         onLoginClick={() => setIsAuthOpen(true)} 
       />
