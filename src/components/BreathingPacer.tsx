@@ -325,7 +325,16 @@ export default function BreathingPacer() {
             to { transform: translate(50px, 100px) scale(1.1); }
         }
         
-        .breathing-circle-outer {\n            border-radius: 50%;\n            will-change: transform;\n            -webkit-backface-visibility: hidden;\n            backface-visibility: hidden;\n            transform: translateZ(0);
+        .breathing-circle-outer {
+            border-radius: 50%;
+            will-change: transform;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-transform: translate3d(0,0,0);
+            transform: translate3d(0,0,0);
+            -webkit-perspective: 1000;
+            perspective: 1000;
+            outline: 1px solid transparent;
             background: linear-gradient(135deg, #e6deff 0%, #ffd9e2 50%, #ede4a3 100%);
             animation: pulse-ring 4s ease-in-out infinite;
         }
@@ -412,7 +421,7 @@ export default function BreathingPacer() {
 
               {/* Dynamic Breathing Circle */}
               <div className="flex-grow flex flex-col items-center justify-center w-full py-8 relative">
-                <div className={`w-48 h-48 md:w-72 md:h-72 rounded-full p-2 breathing-circle-outer transition-transform duration-1000 ${isPlaying && activePhase.name === 'Inhale' ? 'scale-110' : (isPlaying && activePhase.name === 'Exhale' ? 'scale-90' : 'scale-100')}`}>
+                <div className={`w-36 h-36 md:w-72 md:h-72 rounded-full p-2 breathing-circle-outer transition-transform duration-1000 ${isPlaying && activePhase.name === 'Inhale' ? 'scale-110' : (isPlaying && activePhase.name === 'Exhale' ? 'scale-90' : 'scale-100')}`}>
                   <div className="w-full h-full rounded-full breathing-circle-inner flex items-center justify-center flex-col">
                     <span className="font-serif italic text-2xl text-[#484552] font-medium">{activePhase.name}</span>
                     <span className="font-serif text-7xl text-[#614eb2] font-bold">{secondsRemaining}s</span>
@@ -440,11 +449,11 @@ export default function BreathingPacer() {
                   <RotateCcw className="w-6 h-6" />
                 </button>
               </div>
-            </div>
-            
-            {/* Vibe Radio moved here */}
-            <div className="mt-8">
-              <VibeRadio />
+
+              {/* Vibe Radio moved here */}
+              <div className="mt-8 w-full border-t border-[#c9c4d4]/30 pt-8">
+                <VibeRadio />
+              </div>
             </div>
           </div>
 
