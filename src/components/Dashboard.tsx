@@ -1001,7 +1001,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
   };
 
   return (
-    <div className="flex-1 overflow-y-auto w-full h-full text-on-surface selection:bg-butter/30 selection:text-primary bg-surface-container-low font-sans">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden w-full h-full text-on-surface selection:bg-butter/30 selection:text-primary bg-surface-container-low font-sans">
       <main>
         {/* 1. HERO SECTION */}
         <div className="max-w-7xl mx-auto px-6 py-12">

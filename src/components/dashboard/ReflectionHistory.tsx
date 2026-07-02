@@ -47,7 +47,7 @@ export default function ReflectionHistory({ analyses, onDelete, onView }: Reflec
                 )}
               </div>
               <button onClick={() => onDelete(item.id)}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-600 transition-all duration-200 self-start cursor-pointer"
+                className="opacity-100 md:opacity-0 group-hover:opacity-100 p-1.5 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-600 transition-all duration-200 self-start cursor-pointer"
                 title="Delete reflection">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
