@@ -6,6 +6,8 @@ import { supabase, isSupabaseConfigured } from "@/utils/supabaseClient";
 import { calculateCycleState } from "@/utils/cycleHelpers";
 import CravePantrySection from "./CravePantrySection";
 import InteractivePortrait from "./InteractivePortrait";
+import ReflectionHistory from "./dashboard/ReflectionHistory";
+import PatternMemory from "./dashboard/PatternMemory";
 
 interface SavedAnalysis {
   id: string | number;
@@ -674,6 +676,13 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
     localStorage.setItem("clara-saved-analyses", JSON.stringify(updated));
   };
 
+  const handleViewAnalysis = (analysis: SavedAnalysis) => {
+    setMessageText(analysis.message);
+    setSenderLabel(analysis.sender_label || "");
+    setAnalysisResult(analysis.result);
+    document.getElementById('analyzer-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   // Group analyses by sender label to compute counts and compile pattern history
   const senderGroups = savedAnalyses.reduce((groups: Record<string, SavedAnalysis[]>, item) => {
     const sender = (item.sender_label || "unknown").trim().toLowerCase();
@@ -1126,6 +1135,19 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                 </div>
               </div>
             </div>
+            
+            {/* SAVED ANALYSES & PATTERNS GRID */}
+            <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
+              <ReflectionHistory 
+                analyses={savedAnalyses} 
+                onDelete={handleDeleteAnalysis} 
+                onView={handleViewAnalysis} 
+              />
+              <PatternMemory 
+                savedAnalyses={savedAnalyses} 
+                session={session} 
+              />
+            </div>
           </div>
         </section>
 
@@ -1366,6 +1388,19 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                 </div>
               </div>
             </div>
+            
+            {/* SAVED ANALYSES & PATTERNS GRID */}
+            <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
+              <ReflectionHistory 
+                analyses={savedAnalyses} 
+                onDelete={handleDeleteAnalysis} 
+                onView={handleViewAnalysis} 
+              />
+              <PatternMemory 
+                savedAnalyses={savedAnalyses} 
+                session={session} 
+              />
+            </div>
           </div>
         </section>
 
@@ -1401,6 +1436,19 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                   </div>
                 </div>
               </div>
+            </div>
+            
+            {/* SAVED ANALYSES & PATTERNS GRID */}
+            <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
+              <ReflectionHistory 
+                analyses={savedAnalyses} 
+                onDelete={handleDeleteAnalysis} 
+                onView={handleViewAnalysis} 
+              />
+              <PatternMemory 
+                savedAnalyses={savedAnalyses} 
+                session={session} 
+              />
             </div>
           </div>
         </section>
@@ -1475,6 +1523,19 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                 </div>
               </div>
             </div>
+            
+            {/* SAVED ANALYSES & PATTERNS GRID */}
+            <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
+              <ReflectionHistory 
+                analyses={savedAnalyses} 
+                onDelete={handleDeleteAnalysis} 
+                onView={handleViewAnalysis} 
+              />
+              <PatternMemory 
+                savedAnalyses={savedAnalyses} 
+                session={session} 
+              />
+            </div>
           </div>
         </section>
 
@@ -1516,6 +1577,19 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                   <p className="text-sm font-medium text-on-surface/80">"Wait 2 hours before replying. Your cortisol is spiking—protect your peace."</p>
                 </div>
               </div>
+            </div>
+            
+            {/* SAVED ANALYSES & PATTERNS GRID */}
+            <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
+              <ReflectionHistory 
+                analyses={savedAnalyses} 
+                onDelete={handleDeleteAnalysis} 
+                onView={handleViewAnalysis} 
+              />
+              <PatternMemory 
+                savedAnalyses={savedAnalyses} 
+                session={session} 
+              />
             </div>
           </div>
         </section>
