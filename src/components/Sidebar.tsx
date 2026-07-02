@@ -23,21 +23,8 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
   ];
 
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsAccountMenuOpen(false);
-      }
-    };
-    if (isAccountMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isAccountMenuOpen]);
+  // The Account dropdown is closed by a full-screen invisible backdrop layer on both mobile and desktop.
+  // This bypasses iOS WebKit hit-testing bugs where `document.addEventListener` misinterprets bounding boxes.
 
   const handleSignOut = async () => {
     if (confirm("Are you sure you want to sign out?")) {
@@ -60,7 +47,7 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
         {/* Right: Profile/Auth Section */}
         <div className="flex items-center shrink-0 w-8 justify-end">
           {isLoggedIn ? (
-            <div className="relative" ref={menuRef}>
+            <div className="relative">
               <button
                 onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
                 className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-charcoal hover:bg-black/10 transition-colors"
@@ -178,7 +165,7 @@ export default function Sidebar({ activeTab, setActiveTab, session, onLoginClick
         {/* Right: Profile/Auth Section */}
         <div className="flex items-center shrink-0">
           {isLoggedIn ? (
-            <div className="relative" ref={menuRef}>
+            <div className="relative">
               <button
                 onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
                 className="flex items-center space-x-3 bg-black/5 hover:bg-black/10 px-4 py-2 rounded-full transition-colors"
