@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { pantryData } from './CravePantrySection';
 import { getDeliveryApps } from '@/utils/deliveryApps';
+import FeedbackBanner from "./FeedbackBanner";
 
 export default function CravePantryTab() {
   const [currentPhase, setCurrentPhase] = useState<string>('luteal');
@@ -177,6 +178,7 @@ export default function CravePantryTab() {
         </div>
 
       </div>
+      <FeedbackBanner />
     </div>
   );
 }

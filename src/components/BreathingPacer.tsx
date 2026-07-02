@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
 import InteractiveCanvas from "./InteractiveCanvas";
 import VibeRadio from "./VibeRadio";
+import FeedbackBanner from "./FeedbackBanner";
 import DrawingCanvasModal from "./DrawingCanvasModal";
 
 type BreathingStyle = "box" | "relax" | "equal";

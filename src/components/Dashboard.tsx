@@ -8,6 +8,7 @@ import CravePantrySection from "./CravePantrySection";
 import InteractivePortrait from "./InteractivePortrait";
 import ReflectionHistory from "./dashboard/ReflectionHistory";
 import PatternMemory from "./dashboard/PatternMemory";
+import FeedbackBanner from "./FeedbackBanner";
 
 interface SavedAnalysis {
   id: string | number;

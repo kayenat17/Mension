@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { HeartHandshake, AlertCircle, SendHorizonal, Activity, HelpCircle } from "lucide-react";
+import FeedbackBanner from "./FeedbackBanner";
 
 interface Message {
   id: string;
@@ -361,6 +362,9 @@ export default function OvaChat() {
           <SendHorizonal className="w-4 h-4" />
         </button>
       </form>
+      <div className="mt-6 mb-2">
+        <FeedbackBanner />
+      </div>
     </div>
   );
 }
