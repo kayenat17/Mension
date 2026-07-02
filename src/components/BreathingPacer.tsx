@@ -457,7 +457,7 @@ export default function BreathingPacer() {
                 {/* Sight */}
                 <div className="p-5 rounded-3xl bg-white/60 border border-white/40 hover:bg-white/80 transition-all shadow-sm">
                   <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-10 h-10 rounded-2xl bg-[#e6deff] flex items-center justify-center text-xl shadow-inner">👀</div>
+                    <div className="w-10 h-10 rounded-2xl bg-[#e6deff] flex items-center justify-center text-xl shadow-inner">✨</div>
                     <span className="font-serif text-xl text-[#1c1b21] font-semibold">5 things you see</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -468,7 +468,7 @@ export default function BreathingPacer() {
                 {/* Feel */}
                 <div className="p-5 rounded-3xl bg-white/60 border border-white/40 hover:bg-white/80 transition-all shadow-sm">
                   <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-10 h-10 rounded-2xl bg-[#ffd9e2] flex items-center justify-center text-xl shadow-inner">🙌</div>
+                    <div className="w-10 h-10 rounded-2xl bg-[#ffd9e2] flex items-center justify-center text-xl shadow-inner">🪶</div>
                     <span className="font-serif text-xl text-[#1c1b21] font-semibold">4 things you feel</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -480,7 +480,7 @@ export default function BreathingPacer() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-5 rounded-3xl bg-white/60 border border-white/40 hover:bg-white/80 transition-all shadow-sm md:col-span-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <div className="w-8 h-8 rounded-xl bg-[#ede4a3] flex items-center justify-center text-lg">👂</div>
+                      <div className="w-8 h-8 rounded-xl bg-[#ede4a3] flex items-center justify-center text-lg">🎶</div>
                       <span className="font-serif text-md text-[#1c1b21] font-semibold">3 Sounds</span>
                     </div>
                     <div className="space-y-1.5">
@@ -490,7 +490,7 @@ export default function BreathingPacer() {
 
                   <div className="p-5 rounded-3xl bg-white/60 border border-white/40 hover:bg-white/80 transition-all shadow-sm md:col-span-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <div className="w-8 h-8 rounded-xl bg-[#e6deff] flex items-center justify-center text-lg">👃</div>
+                      <div className="w-8 h-8 rounded-xl bg-[#e6deff] flex items-center justify-center text-lg">🕯️</div>
                       <span className="font-serif text-md text-[#1c1b21] font-semibold">2 Smells</span>
                     </div>
                     <div className="space-y-1.5">
@@ -500,7 +500,7 @@ export default function BreathingPacer() {
 
                   <div className="p-5 rounded-3xl bg-white/60 border border-white/40 hover:bg-white/80 transition-all shadow-sm md:col-span-1 flex flex-col">
                     <div className="flex items-center space-x-3 mb-2">
-                      <div className="w-8 h-8 rounded-xl bg-[#ffd9e2] flex items-center justify-center text-lg">👅</div>
+                      <div className="w-8 h-8 rounded-xl bg-[#ffd9e2] flex items-center justify-center text-lg">🍵</div>
                       <span className="font-serif text-md text-[#1c1b21] font-semibold">1 Taste</span>
                     </div>
                     <input className="w-full flex-grow bg-[#fdf8ff]/40 border-none rounded-xl font-bold p-2 text-xs" placeholder="Sweet?" type="text" />
