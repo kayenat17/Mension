@@ -21,7 +21,35 @@ interface CommunityPost {
   created_at: string;
 }
 
-// Helper to generate soft anonymous names
+// Helper to generate a completely deterministic alias based on user ID
+const generateDeterministicAlias = (userId: string) => {
+  const adjectives = [
+    "soft", "pale", "sweet", "quiet", "warm", "gentle", "calm", "wild", "lucid", "luna",
+    "serene", "bright", "misty", "ethereal", "golden", "silver", "velvet", "crystal", "hazy", "twilight",
+    "amber", "coral", "jade", "pearl", "ruby", "sapphire", "opal", "mossy", "dewy", "solar",
+    "lunar", "stellar", "cosmic", "astral", "radiant", "glowing", "shimmering", "sparkling", "gleaming", "dazzling"
+  ];
+  const nouns = [
+    "aurora", "moonflower", "star", "bloom", "willow", "dove", "fern", "breeze", "dawn", "dusk",
+    "meadow", "river", "ocean", "sky", "cloud", "sun", "moon", "comet", "nebula", "galaxy",
+    "forest", "grove", "valley", "mountain", "lake", "stream", "waterfall", "spring", "oasis", "desert",
+    "canyon", "glacier", "tundra", "savanna", "prairie", "jungle", "rainforest", "island", "peninsula", "melody"
+  ];
+  
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  hash = Math.abs(hash);
+
+  const adj = adjectives[hash % adjectives.length];
+  const noun = nouns[(hash >> 2) % nouns.length];
+  const num = (hash % 900) + 100; // 100-999
+
+  return `${adj}${noun}${num}`;
+};
+
+// Helper to generate soft anonymous names randomly (fallback)
 const generateAlias = () => {
   const adjectives = [
     "soft", "pale", "sweet", "quiet", "warm", "gentle", "calm", "wild", "lucid", "luna",
@@ -38,6 +66,7 @@ const generateAlias = () => {
   const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
   const noun = nouns[Math.floor(Math.random() * nouns.length)];
   const num = Math.floor(Math.random() * 1000); // 0-999 for greater uniqueness
+
   return `${adj}${noun}${num}`;
 };
 
@@ -84,12 +113,18 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
 
   useEffect(() => {
     // Setup Alias
-    let savedAlias = localStorage.getItem("clara-community-alias");
-    if (!savedAlias) {
-      savedAlias = generateAlias();
-      localStorage.setItem("clara-community-alias", savedAlias);
+    if (session && session.user && session.user.id) {
+      // Deterministic permanent username based on their account ID
+      setAlias(generateDeterministicAlias(session.user.id));
+    } else {
+      // Fallback for logged out state
+      let savedAlias = localStorage.getItem("clara-community-alias");
+      if (!savedAlias) {
+        savedAlias = generateAlias();
+        localStorage.setItem("clara-community-alias", savedAlias);
+      }
+      setAlias(savedAlias);
     }
-    setAlias(savedAlias);
 
     // Load Reacted Posts from local storage to prevent multi-voting
     const savedReactions = localStorage.getItem("clara-community-reactions");
@@ -114,7 +149,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
         supabase.removeChannel(channel);
       };
     }
-  }, []);
+  }, [session]);
 
   const fetchPosts = async () => {
     if (!isSupabaseConfigured()) {
