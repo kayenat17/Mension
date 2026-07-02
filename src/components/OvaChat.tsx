@@ -209,7 +209,7 @@ export default function OvaChat() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-65px)] md:h-screen bg-white/50 max-w-7xl mx-auto w-full p-4 md:p-6 animate-slide-up">
+    <div className="flex-1 flex flex-col h-[calc(100vh-145px)] md:h-screen bg-white/50 max-w-7xl mx-auto w-full p-4 md:p-6 animate-slide-up">
       {/* Chat Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-black/5 pb-4 gap-3 shrink-0">
         <div className="flex items-center space-x-3">
@@ -339,7 +339,7 @@ export default function OvaChat() {
           e.preventDefault();
           handleSendMessage(inputText);
         }}
-        className="flex items-center gap-3 bg-white p-2 rounded-full shadow-[0_2px_16px_rgba(107,79,160,0.08)] shrink-0 border border-black/5 mt-4 mb-20 md:mb-0"
+        className="flex items-center gap-3 bg-white p-2 rounded-full shadow-[0_2px_16px_rgba(107,79,160,0.08)] shrink-0 border border-black/5 mt-4"
       >
         <input
           type="text"
