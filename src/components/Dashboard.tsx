@@ -1165,8 +1165,10 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                 session={session}
               />
             </div>
-
-            <FeedbackBanner />
+            
+            <div className="relative z-[100] mt-16 pointer-events-auto">
+              <FeedbackBanner />
+            </div>
 
           </div>
         </section>
