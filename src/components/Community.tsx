@@ -48,11 +48,11 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reactedPosts, setReactedPosts] = useState<Record<string, string>>({}); // postId -> reactionType
-  
+
   // New filters
   const [searchQuery, setSearchQuery] = useState("");
   const [postFilter, setPostFilter] = useState<"all" | "mine">("all");
-  
+
   // Mood Tracker State
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
 
@@ -70,7 +70,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
     if (savedReactions) {
       try {
         setReactedPosts(JSON.parse(savedReactions));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     fetchPosts();
@@ -90,34 +90,9 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
     }
   }, []);
 
-  const mockPosts: CommunityPost[] = [
-    {
-      id: "mock-post-1",
-      user_id: "system-mock",
-      alias: "palefern63",
-      content: "I am feeling exhausted today, need a long vacation",
-      phase: "GENERAL PHASE",
-      red_flag_count: 0,
-      trust_gut_count: 1,
-      give_time_count: 0,
-      created_at: new Date().toISOString()
-    },
-    {
-      id: "mock-post-2",
-      user_id: "system-mock",
-      alias: "palefern13",
-      content: "Hi i just started using this",
-      phase: "GENERAL PHASE",
-      red_flag_count: 0,
-      trust_gut_count: 0,
-      give_time_count: 0,
-      created_at: new Date().toISOString()
-    }
-  ];
-
   const fetchPosts = async () => {
     if (!isSupabaseConfigured()) {
-      setPosts(mockPosts);
+      setPosts([]);
       setIsLoading(false);
       return;
     }
@@ -127,17 +102,17 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
-        
+
       if (error) {
         // Table might not exist yet, suppress error to UI
         console.warn("Could not fetch posts. Table might not exist yet.", error);
-        setPosts(mockPosts);
+        setPosts([]);
       } else {
-        setPosts([...mockPosts, ...(data || [])]);
+        setPosts(data as CommunityPost[] || []);
       }
     } catch (err) {
       console.warn("Fetch error:", err);
-      setPosts(mockPosts);
+      setPosts([]);
     } finally {
       setIsLoading(false);
     }
@@ -151,7 +126,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
         const parsed = JSON.parse(savedCycle);
         // Simple fallback if complex calculator isn't imported
         // Real implementation would use calculateCycleState
-      } catch (e) {}
+      } catch (e) { }
     }
     // Fallback to explicit phase selection
     return localStorage.getItem("clara-cycle-phase") || "general";
@@ -207,12 +182,12 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
     try {
       const post = posts.find(p => p.id === postId);
       if (!post) return;
-      
+
       const { error } = await supabase
         .from("community_posts")
         .update({ [reactionType]: post[reactionType] + 1 })
         .eq("id", postId);
-        
+
       if (error) throw error;
     } catch (err) {
       console.error("Error updating reaction:", err);
@@ -220,21 +195,21 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
   };
 
   const filteredPosts = posts.filter(post => {
-    const matchesSearch = post.content.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          post.alias.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.alias.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = postFilter === "mine" ? (session && post.user_id === session.user.id) : true;
     return matchesSearch && matchesFilter;
   });
 
   // Calculate community stats
   const totalPosts = posts.length;
-  const totalReactions = posts.reduce((acc, post) => 
+  const totalReactions = posts.reduce((acc, post) =>
     acc + (post.red_flag_count || 0) + (post.trust_gut_count || 0) + (post.give_time_count || 0), 0
   );
 
   return (
     <main className="max-w-7xl mx-auto px-container-margin py-12 relative min-h-screen font-body-md bg-background text-on-background overflow-x-hidden">
-      
+
       {/* Background Decorative Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-[-1]">
         <div className="organic-blob bg-secondary-fixed w-[400px] h-[400px] rounded-full top-[-10%] right-[-5%]"></div>
@@ -249,10 +224,10 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-        
+
         {/* Posts Column */}
         <div className="lg:col-span-8 space-y-gutter flex flex-col gap-6">
-          
+
           {/* Controls (Search & Filter) */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-2">
             <div className="flex bg-surface-container-low p-1 rounded-full border-2 border-primary/20 w-full md:w-auto">
@@ -273,11 +248,11 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
             </div>
             <div className="relative w-full md:w-72">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70">search</span>
-              <input 
+              <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search posts..." 
+                placeholder="Search posts..."
                 className="w-full pl-10 pr-4 py-2.5 bg-surface-container-lowest border-2 border-primary/20 rounded-full focus:border-primary focus:ring-0 transition-all font-body-md text-on-surface outline-none"
               />
             </div>
@@ -322,7 +297,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
                   <span className="material-symbols-outlined text-2xl">lock</span>
                 </div>
                 <div>
-                  <h4 className="font-headline-md text-xl text-primary">Join the Sisterhood</h4>
+                  <h4 className="font-headline-md text-xl text-primary">Join the circle</h4>
                   <p className="font-body-md text-on-surface-variant mt-1">Sign in to post anonymously and react to others.</p>
                 </div>
               </div>
@@ -350,7 +325,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
             ) : (
               filteredPosts.map((post) => (
                 <article key={post.id} className="bg-surface-container-lowest border-2 border-primary rounded-xl p-8 bubbly-card">
-                  
+
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-primary-fixed rounded-full flex items-center justify-center text-primary font-bold">
                       {post.alias.charAt(0).toUpperCase()}
@@ -360,7 +335,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
                       <p className="text-xs text-on-surface-variant opacity-70 uppercase tracking-wider">{post.phase}</p>
                     </div>
                   </div>
-                  
+
                   <p className="font-headline-md text-[20px] leading-relaxed text-on-surface mb-8 whitespace-pre-wrap">
                     "{post.content}"
                   </p>
@@ -370,11 +345,10 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
                     <button
                       onClick={() => handleReaction(post.id, "red_flag_count")}
                       disabled={!!reactedPosts[post.id] || !session}
-                      className={`flex items-center gap-2 px-4 py-2 border-2 rounded-full transition-transform active:scale-95 ${
-                        reactedPosts[post.id] === "red_flag_count"
+                      className={`flex items-center gap-2 px-4 py-2 border-2 rounded-full transition-transform active:scale-95 ${reactedPosts[post.id] === "red_flag_count"
                           ? "bg-secondary-container border-primary scale-105"
                           : "bg-surface-container-lowest border-primary/20 hover:border-primary hover:bg-secondary-container/30"
-                      } ${!session || reactedPosts[post.id] ? "opacity-90 cursor-not-allowed" : "cursor-pointer"}`}
+                        } ${!session || reactedPosts[post.id] ? "opacity-90 cursor-not-allowed" : "cursor-pointer"}`}
                     >
                       <span className={`material-symbols-outlined text-secondary text-lg ${reactedPosts[post.id] === 'red_flag_count' ? 'filled-icon' : ''}`}>flag</span>
                       <span className="font-label-md text-secondary">Red Flag</span>
@@ -384,11 +358,10 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
                     <button
                       onClick={() => handleReaction(post.id, "trust_gut_count")}
                       disabled={!!reactedPosts[post.id] || !session}
-                      className={`flex items-center gap-2 px-4 py-2 border-2 rounded-full transition-transform active:scale-95 ${
-                        reactedPosts[post.id] === "trust_gut_count"
+                      className={`flex items-center gap-2 px-4 py-2 border-2 rounded-full transition-transform active:scale-95 ${reactedPosts[post.id] === "trust_gut_count"
                           ? "bg-tertiary-fixed border-primary scale-105"
                           : "bg-surface-container-lowest border-primary/20 hover:border-primary hover:bg-tertiary-fixed/30"
-                      } ${!session || reactedPosts[post.id] ? "opacity-90 cursor-not-allowed" : "cursor-pointer"}`}
+                        } ${!session || reactedPosts[post.id] ? "opacity-90 cursor-not-allowed" : "cursor-pointer"}`}
                     >
                       <span className={`material-symbols-outlined text-tertiary text-lg ${reactedPosts[post.id] === 'trust_gut_count' ? 'filled-icon' : ''}`}>favorite</span>
                       <span className="font-label-md text-tertiary">Trust your gut</span>
@@ -398,11 +371,10 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
                     <button
                       onClick={() => handleReaction(post.id, "give_time_count")}
                       disabled={!!reactedPosts[post.id] || !session}
-                      className={`flex items-center gap-2 px-4 py-2 border-2 rounded-full transition-transform active:scale-95 ${
-                        reactedPosts[post.id] === "give_time_count"
+                      className={`flex items-center gap-2 px-4 py-2 border-2 rounded-full transition-transform active:scale-95 ${reactedPosts[post.id] === "give_time_count"
                           ? "bg-primary-fixed border-primary scale-105"
                           : "bg-surface-container-lowest border-primary/20 hover:border-primary hover:bg-primary-fixed/30"
-                      } ${!session || reactedPosts[post.id] ? "opacity-90 cursor-not-allowed" : "cursor-pointer"}`}
+                        } ${!session || reactedPosts[post.id] ? "opacity-90 cursor-not-allowed" : "cursor-pointer"}`}
                     >
                       <span className={`material-symbols-outlined text-primary text-lg ${reactedPosts[post.id] === 'give_time_count' ? 'filled-icon' : ''}`}>schedule</span>
                       <span className="font-label-md text-primary">Give it time</span>
@@ -418,33 +390,33 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
 
         {/* Sidebar Column */}
         <aside className="lg:col-span-4 space-y-6">
-          
+
           <div className="bg-surface-container-lowest border-2 border-primary rounded-xl p-6 bubbly-card">
             <h3 className="font-headline-md text-[24px] text-primary mb-2 font-bold">How are you today?</h3>
             <p className="font-body-md text-on-surface-variant mb-6 text-sm">Log your mood or cycle phase to see personalized insights.</p>
             <div className="grid grid-cols-4 gap-2 mb-6">
-              <button 
+              <button
                 onClick={() => setSelectedMood('great')}
                 className={`flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors active:scale-95 group ${selectedMood === 'great' ? 'bg-primary text-on-primary shadow-sm' : 'hover:bg-primary-fixed'}`}
               >
                 <span className={`material-symbols-outlined text-3xl ${selectedMood === 'great' ? 'text-on-primary filled-icon' : 'text-primary group-hover:filled-icon'}`}>sentiment_very_satisfied</span>
                 <span className="text-[11px] font-label-md mt-1">Great</span>
               </button>
-              <button 
+              <button
                 onClick={() => setSelectedMood('good')}
                 className={`flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors active:scale-95 group ${selectedMood === 'good' ? 'bg-primary text-on-primary shadow-sm' : 'hover:bg-primary-fixed'}`}
               >
                 <span className={`material-symbols-outlined text-3xl ${selectedMood === 'good' ? 'text-on-primary filled-icon' : 'text-primary group-hover:filled-icon'}`}>sentiment_satisfied</span>
                 <span className="text-[11px] font-label-md mt-1">Good</span>
               </button>
-              <button 
+              <button
                 onClick={() => setSelectedMood('okay')}
                 className={`flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors active:scale-95 group ${selectedMood === 'okay' ? 'bg-primary text-on-primary shadow-sm' : 'hover:bg-primary-fixed'}`}
               >
                 <span className={`material-symbols-outlined text-3xl ${selectedMood === 'okay' ? 'text-on-primary filled-icon' : 'text-primary group-hover:filled-icon'}`}>sentiment_neutral</span>
                 <span className="text-[11px] font-label-md mt-1">Okay</span>
               </button>
-              <button 
+              <button
                 onClick={() => setSelectedMood('tired')}
                 className={`flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors active:scale-95 group ${selectedMood === 'tired' ? 'bg-primary text-on-primary shadow-sm' : 'hover:bg-primary-fixed'}`}
               >
@@ -452,7 +424,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
                 <span className="text-[11px] font-label-md mt-1">Tired</span>
               </button>
             </div>
-            <button 
+            <button
               onClick={() => {
                 if (selectedMood) {
                   alert(`Mood logged: ${selectedMood}! Check back for insights soon.`);
@@ -471,7 +443,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
               <span className="material-symbols-outlined text-5xl mb-4 filled-icon text-secondary-fixed">auto_awesome</span>
               <h2 className="font-headline-md text-[24px] mb-2 font-bold text-white">Join the Sisterhood</h2>
               <p className="font-body-md text-sm mb-8 opacity-90 text-white/90">Unlock personalized insights, private group chats, and exclusive wellness tools designed for your cycle.</p>
-              <button 
+              <button
                 onClick={onLoginClick}
                 className="w-full bg-secondary-fixed text-on-secondary-fixed font-button text-button py-4 rounded-xl border-2 border-on-secondary-fixed-variant shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:translate-y-1 hover:shadow-none transition-all active:scale-95"
               >
@@ -506,10 +478,10 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
               </div>
             </div>
             <div className="mt-6">
-              <img 
-                className="w-full rounded-lg border-2 border-primary" 
-                alt="Community Illustration" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKmhelps9UUNMwbuahZIKQBIlkjyURLQdmhI5PXQFGcEX9BZOpigw0hAVtEpDvO-P9DePlxBxs3ODwx8kaN5KA17RVQJE0ohhXrZDJ_sTQ7vTmUQ0lyemb47TOkeX9FFVbJqv2bFDe0D7cvrD7Q0W6sI2517sfONMdjVdnWuPC0O973s7_4aCtamKjMJqI6dI330Fkj6DBzmUtYHsQA_oGjMV3saRgbQ8KblZ26k0IAjYbwcLQ-zA0bjp9XrbXPF4tCRkDhQ_J3khh" 
+              <img
+                className="w-full rounded-lg border-2 border-primary"
+                alt="Community Illustration"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKmhelps9UUNMwbuahZIKQBIlkjyURLQdmhI5PXQFGcEX9BZOpigw0hAVtEpDvO-P9DePlxBxs3ODwx8kaN5KA17RVQJE0ohhXrZDJ_sTQ7vTmUQ0lyemb47TOkeX9FFVbJqv2bFDe0D7cvrD7Q0W6sI2517sfONMdjVdnWuPC0O973s7_4aCtamKjMJqI6dI330Fkj6DBzmUtYHsQA_oGjMV3saRgbQ8KblZ26k0IAjYbwcLQ-zA0bjp9XrbXPF4tCRkDhQ_J3khh"
               />
             </div>
           </div>

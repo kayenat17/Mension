@@ -995,11 +995,11 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
       <main>
         {/* 1. HERO SECTION */}
         <div className="max-w-7xl mx-auto px-6 py-12">
-          <section className="w-full bg-butter rounded-[40px] p-12 md:p-24 text-center relative overflow-hidden mb-16 shadow-2xl">
+          <section className="w-full bg-butter rounded-[40px] p-6 md:p-12 lg:p-24 text-center relative overflow-hidden mb-16 shadow-2xl">
             <div className="inline-flex items-center px-6 py-2 rounded-full border border-on-surface/10 bg-white/20 backdrop-blur-sm mb-12">
               <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-on-surface">Mension Journal •</span>
             </div>
-            <h1 className="font-serif text-5xl md:text-8xl leading-[1.1] mb-12 tracking-tight max-w-5xl mx-auto">
+            <h1 className="font-serif text-4xl md:text-6xl lg:text-8xl leading-[1.1] mb-12 tracking-tight max-w-5xl mx-auto">
               Understand what's <span className="italic relative">really<span className="absolute -bottom-2 left-0 w-full h-3 bg-on-surface/10 rounded-full"></span></span> happening.
             </h1>
             <div className="flex flex-wrap justify-center items-center gap-3 text-lg md:text-xl font-medium text-on-surface/80 max-w-3xl mx-auto">
@@ -1017,12 +1017,12 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         </div>
 
         {/* 2. CORE ANALYZER */}
-        <section id="analyzer-pro" className="py-12 md:py-24">
+        <section id="analyzer-pro" className="py-8 md:py-16 lg:py-24">
           <div className="max-w-5xl mx-auto px-6 relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-butter via-lavender to-hotpink rounded-[42px] blur opacity-20 group-hover:opacity-30 transition duration-1000"></div>
             <div className="relative bg-white rounded-[40px] shadow-2xl overflow-hidden border border-lavender/10">
               <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
-                <div className="lg:col-span-6 p-8 md:p-12 space-y-10 border-r border-lavender/10">
+                <div className="lg:col-span-6 p-5 md:p-8 lg:p-12 space-y-10 border-r border-lavender/10">
                   <form onSubmit={handleAnalyze} className="space-y-8">
                     <div className="space-y-4">
                       <div className="flex items-center gap-4">
@@ -1089,7 +1089,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                       <p className="text-sm font-semibold text-charcoal">Ova is reading between the lines...</p>
                     </div>
                   ) : (
-                    <div id="result-active" className="flex-1 flex flex-col p-8 md:p-12 animate-fade-in">
+                    <div id="result-active" className="flex-1 flex flex-col p-5 md:p-8 lg:p-12 animate-fade-in">
                       <div className="flex justify-between items-center mb-10">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-butter p-0.5 border-2 border-white shadow-sm overflow-hidden">
@@ -1130,14 +1130,14 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         </section>
 
         {/* 3. THE SCIENCE OF SUBTEXT */}
-        <section id="science" className="py-12 md:py-24">
+        <section id="science" className="py-8 md:py-16 lg:py-24">
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-20 space-y-4">
               <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-lavender/30 text-secondary text-[10px] font-bold uppercase tracking-[0.2em]">The Neuro-Endocrinology</div>
               <h2 className="font-serif text-4xl md:text-6xl tracking-tight">The Science of Subtext</h2>
               <p className="text-on-surface/60 max-w-2xl mx-auto text-lg leading-relaxed">How your hormonal architecture alters your perception of interpersonal friction.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="bg-white p-8 rounded-[32px] border border-lavender/20 shadow-sm hover:shadow-xl transition-all group">
                 <div className="w-12 h-12 rounded-2xl bg-hotpink/10 flex items-center justify-center text-hotpink mb-6 group-hover:scale-110 transition-transform">
                   <span className="material-symbols-outlined">neurology</span>
@@ -1171,10 +1171,10 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         </section>
 
         {/* 4. BIO-REALTIME & CYCLE */}
-        <section id="cycle-suite" className="py-12 md:py-24">
+        <section id="cycle-suite" className="py-8 md:py-16 lg:py-24">
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex flex-col lg:flex-row gap-12">
-              <div className="flex-1 bg-surface-container-low rounded-[40px] p-8 md:p-12 border border-lavender/20 shadow-lg">
+              <div className="flex-1 bg-surface-container-low rounded-[40px] p-5 md:p-8 lg:p-12 border border-lavender/20 shadow-lg">
                 <div className="flex justify-between items-center mb-10">
                   <div className="flex items-center gap-4">
                     <div>
@@ -1332,9 +1332,9 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         </section>
 
         {/* 5. RHYTHM OF RESILIENCE */}
-        <section className="py-12 md:py-24">
+        <section className="py-8 md:py-16 lg:py-24">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="bg-white rounded-[60px] p-10 md:p-16 shadow-2xl border border-lavender/20">
+            <div className="bg-white rounded-[60px] p-6 md:p-6 md:p-10 lg:p-16 shadow-2xl border border-lavender/20">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-16">
                 <div>
                   <h2 className="font-serif text-4xl font-bold">Rhythm of Resilience</h2>
@@ -1370,14 +1370,14 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         </section>
 
         {/* 6. REAL CLARITY FOR REAL PEOPLE */}
-        <section className="py-12 md:py-24">
+        <section className="py-8 md:py-16 lg:py-24">
           <div className="max-w-5xl mx-auto px-6">
             <div className="text-center mb-16 space-y-4">
               <h2 className="font-serif text-4xl font-bold">Real Clarity for Real People</h2>
               <div className="w-20 h-1 bg-hotpink/20 mx-auto rounded-full"></div>
             </div>
             <div className="space-y-8">
-              <div className="bg-surface-container-low p-10 rounded-[48px] border border-lavender/20 flex flex-col md:flex-row gap-10 items-center">
+              <div className="bg-surface-container-low p-6 md:p-10 rounded-[48px] border border-lavender/20 flex flex-col md:flex-row gap-6 md:p-10 items-center">
                 <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl flex-shrink-0">
                   <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAokSb8daD9GWcAC_boR8sA4SqcBsNio6Mt308OfBKfu7ARUKWgAO2K603IQ5VcEPpaTNb1nMsquF-L-AjaHyMN5hpaAxhOOaXhRYwVASO2I4S58wgi8As-R5C0QeiwuflVpFUTUDPifEElYKNrKtpNtpPb6YhU1WQFumHv83XxOZT_WSKA353i3g5sozfI4ZodMLMdB4GwxFCdLKryEc2nL5bs6Non6Bpb2c-jy816QAysYQ_s-LOHAyI-qdVtLnlBs9XrG3zYnwQ" />
                 </div>
@@ -1389,7 +1389,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
                   </div>
                 </div>
               </div>
-              <div className="bg-white p-10 rounded-[48px] border border-lavender/20 flex flex-col md:flex-row-reverse gap-10 items-center">
+              <div className="bg-white p-6 md:p-10 rounded-[48px] border border-lavender/20 flex flex-col md:flex-row-reverse gap-6 md:p-10 items-center">
                 <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl flex-shrink-0">
                   <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAY3gp7Eryh8Lm6GR2x0xk1I2M0fWzCkVIw9SSS1IavhclnIfOSN01xcLjRwYxD3vvg38WCUb-O3aCBfuM4FszJRXDVzkt1XYk4h3mZjobn7s3gmJvbonFqoegxzVqvXNrzy0rqInLGGg1RulpV8ue95Rah_0etCS8SWgfeF510gOHBlV7ntqb80s-1BTZZvMi1wszWCZ-miFo3ywvUTHrnRejY5oNCdEr5aFPmj49d1sbefxu6Sb6mf3c2-DvxqIzmIE69qbSpyZI" />
                 </div>
@@ -1406,7 +1406,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         </section>
 
         {/* 7. HOW IT WORKS */}
-        <section className="py-12 md:py-24">
+        <section className="py-8 md:py-16 lg:py-24">
           <div className="max-w-4xl mx-auto px-6">
             <div className="text-center mb-20">
               <h2 className="font-serif text-5xl font-bold">How It Works</h2>
@@ -1437,7 +1437,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         </section>
 
         {/* 8. NOURISHMENT GUIDE (CRAVE PANTRY) */}
-        <section className="py-12 md:py-24">
+        <section className="py-8 md:py-16 lg:py-24">
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-16">
               <h2 className="font-serif text-4xl font-bold">The Crave Pantry</h2>
@@ -1479,7 +1479,7 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
         </section>
 
         {/* 9. THE VISION */}
-        <section className="py-12 md:py-24">
+        <section className="py-8 md:py-16 lg:py-24">
           <div className="max-w-7xl mx-auto px-12 py-16 bg-butter rounded-[60px] grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
               <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/30 text-primary text-[10px] font-bold uppercase tracking-[0.2em]">The Vision</div>
@@ -1487,7 +1487,20 @@ export default function Dashboard({ setActiveTab, session, onLoginClick }: Dashb
               <p className="text-xl text-on-surface/70 leading-relaxed max-w-xl">
                 Mension isn't just a tracker. It's a bio-empathy layer for the modern world. We are building the future where biology and communication live in harmony.
               </p>
-              <button className="px-10 py-5 bg-charcoal text-white rounded-full font-bold uppercase tracking-widest text-sm hover:bg-charcoal/90 transition-all shadow-xl">Join the Waitlist</button>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <button className="px-10 py-5 bg-charcoal text-white rounded-full font-bold uppercase tracking-widest text-sm hover:bg-charcoal/90 transition-all shadow-xl w-full sm:w-auto">
+                  Join the Waitlist
+                </button>
+                <a 
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSdGvCgHJrFmfKmYk1wcrFRhMiKV_P4cWTeV-zZ_3L6rgG9d-w/viewform" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="px-10 py-5 bg-white text-charcoal border-2 border-charcoal rounded-full font-bold uppercase tracking-widest text-sm hover:bg-charcoal/5 transition-all shadow-lg w-full sm:w-auto text-center flex items-center justify-center gap-2"
+                >
+                  <Heart className="w-4 h-4 text-hotpink" />
+                  Leave a Review
+                </a>
+              </div>
             </div>
             <div className="relative">
               <div className="absolute -inset-10 bg-white/40 blur-3xl rounded-full"></div>
