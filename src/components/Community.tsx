@@ -41,6 +41,32 @@ const generateAlias = () => {
   return `${adj}${noun}${num}`;
 };
 
+// Mock data for fallback when Supabase is not configured
+const mockPosts = [
+  {
+    id: "1",
+    user_id: "user_1",
+    alias: "palefern63",
+    content: "I am feeling exhausted today, need a long vacation",
+    phase: "GENERAL PHASE",
+    created_at: new Date().toISOString(),
+    red_flag_count: 0,
+    trust_gut_count: 1,
+    give_time_count: 0
+  },
+  {
+    id: "2",
+    user_id: "user_2",
+    alias: "palefern13",
+    content: "Hi i just started using this",
+    phase: "GENERAL PHASE",
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+    red_flag_count: 0,
+    trust_gut_count: 0,
+    give_time_count: 0
+  }
+];
+
 export default function Community({ session, onLoginClick }: CommunityProps) {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [newPostContent, setNewPostContent] = useState("");
@@ -92,7 +118,7 @@ export default function Community({ session, onLoginClick }: CommunityProps) {
 
   const fetchPosts = async () => {
     if (!isSupabaseConfigured()) {
-      setPosts([]);
+      setPosts(mockPosts);
       setIsLoading(false);
       return;
     }

@@ -339,7 +339,7 @@ export default function OvaChat() {
           e.preventDefault();
           handleSendMessage(inputText);
         }}
-        className="flex items-center gap-3 bg-white p-2 rounded-full shadow-[0_2px_16px_rgba(107,79,160,0.08)] shrink-0 border border-black/5 mt-4"
+        className="flex items-center gap-3 bg-white p-2 rounded-full shadow-[0_2px_16px_rgba(107,79,160,0.08)] shrink-0 border border-black/5 mt-4 mb-20 md:mb-0"
       >
         <input
           type="text"

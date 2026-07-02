@@ -94,22 +94,30 @@ export default function DrawingCanvasModal({ onClose }: { onClose: () => void })
       <div className="bg-white w-full max-w-6xl h-full max-h-[800px] rounded-[32px] shadow-2xl flex flex-col overflow-hidden relative">
         
         {/* Header toolbar */}
-        <div className="flex items-center justify-between p-4 px-6 border-b border-[#e6e1ea] bg-[#fdf8ff]">
-          <div className="flex items-center space-x-6">
-            <h2 className="font-serif italic text-2xl font-bold text-[#1c1b21]">Mood Mural</h2>
+        <div className="flex flex-wrap items-center justify-between p-4 md:px-6 border-b border-[#e6e1ea] bg-[#fdf8ff] gap-4">
+          <div className="flex flex-wrap items-center gap-4 md:space-x-6 w-full md:w-auto">
+            <div className="flex justify-between w-full md:w-auto items-center">
+              <h2 className="font-serif italic text-2xl font-bold text-[#1c1b21]">Mood Mural</h2>
+              {/* Close button on mobile right next to title */}
+              <button onClick={onClose} className="md:hidden p-2 bg-[#f1ecf5] hover:bg-[#e6e1ea] text-[#1c1b21] rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             
             {/* Tools */}
-            <div className="flex items-center space-x-4 bg-white px-4 py-2 rounded-full shadow-sm border border-[#e6e1ea]">
-              {colors.map(c => (
-                <button 
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${color === c ? 'border-black scale-110 shadow-md' : 'border-transparent'}`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
+            <div className="flex flex-wrap items-center gap-3 bg-white px-4 py-2 rounded-[24px] shadow-sm border border-[#e6e1ea] overflow-x-auto w-full md:w-auto">
+              <div className="flex items-center space-x-3 shrink-0">
+                {colors.map(c => (
+                  <button 
+                    key={c}
+                    onClick={() => setColor(c)}
+                    className={`w-7 h-7 md:w-8 md:h-8 rounded-full border-2 transition-transform hover:scale-110 ${color === c ? 'border-black scale-110 shadow-md' : 'border-transparent'}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
               
-              <div className="w-px h-6 bg-[#e6e1ea] mx-2"></div>
+              <div className="hidden md:block w-px h-6 bg-[#e6e1ea] mx-2"></div>
               
               <input 
                 type="range" 
@@ -117,26 +125,26 @@ export default function DrawingCanvasModal({ onClose }: { onClose: () => void })
                 max="30" 
                 value={brushSize} 
                 onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                className="w-24 accent-[#614eb2]"
+                className="w-20 md:w-24 accent-[#614eb2] shrink-0"
               />
               
-              <div className="w-px h-6 bg-[#e6e1ea] mx-2"></div>
+              <div className="hidden md:block w-px h-6 bg-[#e6e1ea] mx-2"></div>
 
-              <button onClick={() => setColor("#ffffff")} className="p-2 hover:bg-[#f1ecf5] rounded-full text-[#484552] transition-colors" title="Eraser">
+              <button onClick={() => setColor("#ffffff")} className="p-2 hover:bg-[#f1ecf5] rounded-full text-[#484552] transition-colors shrink-0" title="Eraser">
                 <Eraser className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 w-full md:w-auto justify-end">
             <button onClick={clearCanvas} className="text-[#484552] font-bold text-sm hover:text-[#ba1a1a] transition-colors">
               CLEAR
             </button>
             <button onClick={downloadArt} className="bg-[#1c1b21] text-white px-6 py-2 rounded-full font-bold text-sm hover:bg-[#614eb2] transition-colors flex items-center space-x-2">
               <Download className="w-4 h-4" />
-              <span>SAVE</span>
+              <span className="hidden sm:inline">SAVE</span>
             </button>
-            <button onClick={onClose} className="p-2 bg-[#f1ecf5] hover:bg-[#e6e1ea] text-[#1c1b21] rounded-full transition-colors ml-4">
+            <button onClick={onClose} className="hidden md:block p-2 bg-[#f1ecf5] hover:bg-[#e6e1ea] text-[#1c1b21] rounded-full transition-colors ml-4">
               <X className="w-6 h-6" />
             </button>
           </div>

@@ -575,7 +575,7 @@ export default function BreathingPacer() {
                   onChange={(e) => setBurnText(e.target.value)}
                   placeholder="Type your intrusive thoughts, the angry text you shouldn't send, or whatever is weighing you down here..."
                   disabled={isBurning}
-                  className="w-full h-48 bg-transparent border-none focus:ring-0 font-serif text-lg text-[#290616] placeholder:text-[#290616]/40 resize-none leading-[32px] outline-none"
+                  className="w-full h-24 md:h-48 bg-transparent border-none focus:ring-0 font-serif text-base md:text-lg text-[#290616] placeholder:text-[#290616]/40 resize-none leading-[28px] md:leading-[32px] outline-none"
                 ></textarea>
                 <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-[#b90068]/30 rounded-tr-xl pointer-events-none"></div>
               </div>
@@ -597,6 +597,9 @@ export default function BreathingPacer() {
         </section>
 
       </main>
+
+      {/* spacer for mobile nav */}
+      <div className="h-24 md:h-0 w-full"></div>
 
       {isDrawingModalOpen && (
         <DrawingCanvasModal onClose={() => setIsDrawingModalOpen(false)} />
